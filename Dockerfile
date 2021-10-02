@@ -1,4 +1,4 @@
-FROM gcc:10
+FROM gcc:9
 WORKDIR /app/
 COPY main.c ./
 RUN gcc main.c -o main

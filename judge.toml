@@ -5,3 +5,4 @@ image={ source = "dockerfile",path="."}
 run = [
   "cat $input | ./main"
 ]
+
