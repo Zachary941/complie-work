@@ -1,5 +1,4 @@
-FROM ubuntu:20.04
-RUN apt update && apt install gcc
+FROM gcc:10
 WORKDIR /app/
 COPY main.c ./
 RUN gcc main.c -o main
