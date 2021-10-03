@@ -68,7 +68,7 @@ int judgecontinue(char str[], int i)
 
 int judgereturn(char str[], int i)
 {
-    if (str[i + 1] == 'e' && str[i + 2] == 't' && str[i + 3] == 'u' && str[i + 4] == 'r' && str[i + 5] == 'n' && (str[i + 6] == '(' || str[i + 6] == ' ' || str[i + 6] == '\n' || str[i + 6] == '\0' || str[i + 6] == ';'))
+    if (str[i + 1] == 'e' && str[i + 2] == 't' && str[i + 3] == 'u' && str[i + 4] == 'r' && str[i + 5] == 'n' && (str[i + 6] == '(' || str[i + 6] == ' ' || str[i + 6] == '\n' || str[i + 6] == '\0' || str[i + 6] == ';'|| str[i + 6] == '\t'|| str[i + 6] == '\r'))
     {
         return 1;
     }
