@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
                     identbuf[j] = strbuf[i];
                     i++;
                     j++;
-                }while (strbuf[i] != ' ' && strbuf[i] != '\n'&&strbuf[i] != ';'&&strbuf[i] != ')'&&strbuf[i] != '='&&strbuf[i] != '('&&strbuf[i] != '<'&&strbuf[i] != '>'&&strbuf[i] != '}'&&strbuf[i] != '{'&&strbuf[i] != '+'&&strbuf[i] != '-'&&strbuf[i] != '*'&&strbuf[i] != '/');
+                }while (strbuf[i] != ' ' && strbuf[i] != '\n'&& strbuf[i] != '\t'&& strbuf[i] != '\r'&&strbuf[i] != ';'&&strbuf[i] != ')'&&strbuf[i] != '='&&strbuf[i] != '('&&strbuf[i] != '<'&&strbuf[i] != '>'&&strbuf[i] != '}'&&strbuf[i] != '{'&&strbuf[i] != '+'&&strbuf[i] != '-'&&strbuf[i] != '*'&&strbuf[i] != '/');
                 // printf("%s identbuf\n",identbuf);
                 if ('0' <= identbuf[0] && '9' >= identbuf[0])
                 {
