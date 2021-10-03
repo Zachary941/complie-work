@@ -271,11 +271,9 @@ int main(int argc, char *argv[])
                     // printf("%d %d",i,length);
                 }
             }
-            if (flag==0)
+            if (flag==0&&i!=1)
             {
                 printf("Err\n");
-                printf("%d123",i);
-                printf("%s\n strbuf",strbuf);
                 flag=2;break;
             }
         }
