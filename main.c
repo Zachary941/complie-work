@@ -274,7 +274,8 @@ int main(int argc, char *argv[])
             if (flag==0)
             {
                 printf("Err\n");
-                // printf("%d123",i);
+                printf("%d123",i);
+                printf("%s\n strbuf",strbuf);
                 flag=2;break;
             }
         }
