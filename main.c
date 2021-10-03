@@ -219,6 +219,10 @@ int main(int argc, char *argv[])
                 break;   
             case '\n':
                 flag=1;i++;break; 
+            case '\t':
+                flag=1;break;
+            case '\r':
+                flag=1;break;
             default:
                 // printf("%d de", i);
                 break;
@@ -271,7 +275,7 @@ int main(int argc, char *argv[])
                     // printf("%d %d",i,length);
                 }
             }
-            if (flag==0&&i!=1)
+            if (flag==0)
             {
                 printf("Err\n");
                 flag=2;break;
