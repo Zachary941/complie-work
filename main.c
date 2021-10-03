@@ -8,7 +8,7 @@ FILE *fp;
 int size = 200;
 int judgeif(char str[], int i)
 {
-    if (str[i + 1] == 'f' && (str[i + 2] == '(' || str[i + 2] == ' '))
+    if (str[i + 1] == 'f' && (str[i + 2] == '(' || str[i + 2] == ' '||str[i + 2] == '\t'||str[i + 2] == '\r'||str[i + 2] == '\n'))
     {
         return 1;
     }
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
                     i += 2;
                     flag = 1;
                 }
-                else if (strbuf[i + 1] == ' ')
+                else if (strbuf[i + 1] != '=')
                 {
                     printf("Assign\n");
                     i += 1;
@@ -232,12 +232,40 @@ int main(int argc, char *argv[])
                     identbuf[j] = strbuf[i];
                     i++;
                     j++;
-                }while (strbuf[i] != ' ' && strbuf[i] != '\n'&&strbuf[i] != ';'&&strbuf[i] != ')');
+                }while (strbuf[i] != ' ' && strbuf[i] != '\n'&&strbuf[i] != ';'&&strbuf[i] != ')'&&strbuf[i] != '='&&strbuf[i] != '('&&strbuf[i] != '<'&&strbuf[i] != '>'&&strbuf[i] != '}'&&strbuf[i] != '{');
+                // printf("%s identbuf\n",identbuf);
                 if ('0' <= identbuf[0] && '9' >= identbuf[0])
                 {
-                    printf("Number(%s)\n", identbuf);flag=1;
+                    // printf("Number(%s)\n", identbuf);flag=1;
+                    int flag2=0;
+                    for (int k = 0; k < strlen(identbuf); k++)
+                    {
+                        if ('0' > identbuf[k] || '9' < identbuf[k])
+                        {
+                            flag2=k;break;
+                        }
+                    }
+                    if (flag2==0)
+                    {
+                        printf("Number(%s)\n", identbuf);flag=1;
+                    }else{
+
+                        printf("Number(");flag=1;
+                        for (int k = 0; k < flag2; k++)
+                        {
+                            printf("%c",identbuf[k]);
+                        }
+                        printf(")\n");
+                        printf("Ident(");
+                        for (int k = flag2; k < strlen(identbuf); k++)
+                        {
+                            printf("%c",identbuf[k]);
+                        }
+                        printf(")\n");
+                        flag=1;
+                    }
                 }
-                else if (('a' <= identbuf[0] && 'z' >= identbuf[0])||('A' <= identbuf[0] && 'Z' >= identbuf[0]))
+                else if (('a' <= identbuf[0] && 'z' >= identbuf[0])||('A' <= identbuf[0] && 'Z' >= identbuf[0])||identbuf[0]=='_')
                 {
                     printf("Ident(%s)\n", identbuf);flag=1;
                     // printf("%d %d",i,length);
@@ -245,9 +273,11 @@ int main(int argc, char *argv[])
             }
             if (flag==0)
             {
-                printf("Err\n");flag=2;break;
+                printf("Err\n");
+                // printf("%d123",i);
+                flag=2;break;
             }
-            
         }
     }
 }
+
