@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
             break;
         int length = strlen(strbuf);
         int i = 0;
-        while (strbuf[i] !='\0')
+        while (strbuf[i] !='\0'&&i<length)
         {
             flag = 0;
             switch (strbuf[i])
@@ -220,9 +220,9 @@ int main(int argc, char *argv[])
             case '\n':
                 flag=1;i++;break; 
             case '\t':
-                flag=1;break;
+                flag=1;i++;break;
             case '\r':
-                flag=1;break;
+                flag=1;i++;break;
             default:
                 // printf("%d de", i);
                 break;
