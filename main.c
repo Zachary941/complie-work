@@ -154,9 +154,30 @@ int out(){
 	return 0;
 }
 int main(){
-	int k=0;
+	int k=0,j=0,p=0;
+	char first[100000];
 	while((c=getchar())!=EOF){
-		all[k]=c;k++;
+		first[k]=c;k++;
+	}
+	for(j=0;j<strlen(first);j++,p++){
+		
+		if(first[j]=='/'&&first[j+1]=='/'){
+			j++;j++;
+			while(first[j]!='\n'){
+				j++;
+			}
+			j++;
+		}else if(first[j]=='/'&&first[j+1]=='*'){
+			j++;j++;
+			while(!(first[j]=='*'&&first[j+1]=='/')){
+				j++;
+				if(j>strlen(first)){
+					return 1;
+				}
+			}
+			j++;j++;
+		}
+		all[p]=first[j];
 	}
 	k=0;
 	CompUnit();
