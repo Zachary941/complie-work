@@ -71,7 +71,7 @@ int Number(){
 		//8->10
 		int i=1;
 		sum=0;
-		for (i = 2; i<strlen(strbuf); i++)
+		for (i = 1; i<strlen(strbuf); i++)
 		{
 			if ('0'>strbuf[i]||strbuf[i]>'7')
 			{
