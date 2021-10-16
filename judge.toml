@@ -1,7 +1,7 @@
-[jobs.lab1]
+[jobs.test-submit]
 
 image={ source = "dockerfile",path="."}
 
 run = [
-  "./main < $input > $ir"
+  "cat $input | ./main"
 ]
