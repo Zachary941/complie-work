@@ -58,53 +58,53 @@ int factor_value(){//求一个因子的值
         m++;
        }
     else{//因子是一个数
-        int i=0;
-	    int sum=0,flag=0;
-	    memset(strbuf,0,sizeof(strbuf));
-	    while(isdigit(exp1[m])||isalpha(exp1[m])){
-			strbuf[i]=exp1[m];
-			i++;m++;
-		}
-		if (strbuf[0]=='0'&&(strbuf[1]!='x'&&strbuf[1]!='X'))
+    int i=0;
+    int sum=0,flag=0;
+    memset(strbuf,0,sizeof(strbuf));
+    while(isdigit(exp1[m])||isalpha(exp1[m])){
+		strbuf[i]=exp1[m];
+		i++;m++;
+	}
+	if (strbuf[0]=='0'&&(strbuf[1]!='x'&&strbuf[1]!='X'))
+	{
+		//8->10
+		int i=1;
+		sum=0;
+		for (i = 1; i<strlen(strbuf); i++)
 		{
-			//8->10
-			int i=1;
-			sum=0;
-			for (i = 1; i<strlen(strbuf); i++)
+			if ('0'>strbuf[i]||strbuf[i]>'7')
 			{
-				if ('0'>strbuf[i]||strbuf[i]>'7')
-				{
-					flag=1;return 0;
-				}
-				sum=sum*8+ (strbuf[i]-'0');
+				flag=1;return 0;
 			}
-		}else if ((strbuf[0]=='0'&&strbuf[1]=='x')||(strbuf[0]=='0'&&strbuf[1]=='X'))
-		{
-			//16->10
-			int i=2;
-			sum=0;
-			for (i = 2; i<strlen(strbuf); i++)
-			{
-				if (isdigit(strbuf[i]))
-				{
-					sum=sum*16+ (strbuf[i]-'0');
-				}else if(isalpha(strbuf[i])){
-					sum=sum*16+ (toupper(strbuf[i])-'A'+10);
-				}			
-			}
-		}else{
-			int i;
-			sum=0;
-			for (i = 0; i<strlen(strbuf); i++)
-			{
-				if (!isdigit(strbuf[i]))
-				{
-					flag=1;return 0;
-				}
-				sum=sum*10+ (strbuf[i]-'0');
-			}
+			sum=sum*8+ (strbuf[i]-'0');
 		}
-		result=sum;
+	}else if ((strbuf[0]=='0'&&strbuf[1]=='x')||(strbuf[0]=='0'&&strbuf[1]=='X'))
+	{
+		//16->10
+		int i=2;
+		sum=0;
+		for (i = 2; i<strlen(strbuf); i++)
+		{
+			if (isdigit(strbuf[i]))
+			{
+				sum=sum*16+ (strbuf[i]-'0');
+			}else if(isalpha(strbuf[i])){
+				sum=sum*16+ (toupper(strbuf[i])-'A'+10);
+			}			
+		}
+	}else{
+		int i;
+		sum=0;
+		for (i = 0; i<strlen(strbuf); i++)
+		{
+			if (!isdigit(strbuf[i]))
+			{
+				flag=1;return 0;
+			}
+			sum=sum*10+ (strbuf[i]-'0');
+		}
+	}
+	result=sum;
     }
     return result;
 }
@@ -130,6 +130,7 @@ int Number(){
 	while(all[k]==' '||all[k]=='\t'||all[k]=='\n'||all[k]=='\r'){
 		k++;
 	}
+	memset(strbuf,0,sizeof(strbuf));
 	while(isdigit(all[k])||isalpha(all[k])){
 		strbuf[i]=all[k];
 		i++;k++;
@@ -246,29 +247,32 @@ int Stmt(){
 	get_true("return"); 
 	int l=k;
 	int m=0;
-	while(all[l]!=';'&&all[l]!='\n'){
-			if(all[l]==' ') {
-				l++;continue;
-			}else if(all[l]=='+'||all[l]=='-'){
-				count=0;
-				while(all[l]=='-'||all[l]=='+'){
-					if(all[l]=='-'){
-						count++;
-					}
-					l++;
+	while(all[l]!=';'&&all[l]!='\n') {
+		if(all[l]==' ') {
+			l++;
+			continue;
+		} else if(all[l]=='+'||all[l]=='-') {
+			count=0;
+			while(all[l]=='-'||all[l]=='+'||all[l]==' ') {
+				if(all[l]=='-') {
+					count++;
 				}
-				if(count%2==1){
-					exp1[m]='-';m++;
-				}else{
-					exp1[m]='+';m++;
-				}
-			}else{
-				exp1[m]=all[l];
-				l++;m++;
+				l++;
 			}
+			if(count%2==1) {
+				exp1[m]='-';
+				m++;
+			} else {
+				exp1[m]='+';
+				m++;
+			}
+		} else {
+			exp1[m]=all[l];
+			l++;
+			m++;
 		}
+	}
 	Exp(); 
-
 	get_true(";");
 	return 0;
 }
@@ -319,15 +323,34 @@ int main(){
 	int k=0,j=0,p=0;
 	char first[100000];
 	while((c=getchar())!=EOF){
-		if(c=='\n'){
-			continue;
-		}
 		first[k]=c;k++;
 	}
-	printf("%s",first);
+	for(j=0;j<strlen(first);j++,p++){
+		
+		if(first[j]=='/'&&first[j+1]=='/'){
+			j++;j++;
+			while(first[j]!='\n'){
+				j++;
+			}
+			j++;
+		}else if(first[j]=='/'&&first[j+1]=='*'){
+			j++;j++;
+			while(!(first[j]=='*'&&first[j+1]=='/')){
+				j++;
+				if(j>strlen(first)){
+					return 1;
+				}
+			}
+			j++;j++;
+		}
+		all[p]=first[j];
+	}
+	k=0;
+	CompUnit();
 	if (flag==1)
 	{
 		return 1;
 	}
+	out();
 	return 0;
 }
