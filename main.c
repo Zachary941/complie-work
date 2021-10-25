@@ -5,7 +5,7 @@
 char c;
 char strbuf[200];
 char all[10000];
-char exp[2000];
+char exp1[2000];
 int flag=0,f=0,k=0;
 int sum=0;
 int m=0,count=0;
@@ -18,7 +18,7 @@ int expression_value(){//求一个表达式的值
     int result=term_value();//求第一项的值
     int more=1;//有没有新的项
     while(more){
-        char op=exp[m];//看一个字符，不取走。cin会从输入流里面拿走
+        char op=exp1[m];//看一个字符，不取走。cin会从输入流里面拿走
         if(op=='+'||op=='-'){
             m++;
             int value=term_value();
@@ -33,7 +33,7 @@ int expression_value(){//求一个表达式的值
 int term_value(){//求一个项的值
     int result=factor_value();
     while(1){
-        char op=exp[m];
+        char op=exp1[m];
         if(op=='*'||op=='/'||op=='%'){//如果有乘除，说明还有后续因子
             m++;//从输入中取走一个字符
             int value=factor_value();
@@ -51,7 +51,7 @@ int term_value(){//求一个项的值
 }
 int factor_value(){//求一个因子的值
     int result=0;
-    char c=exp[m];
+    char c=exp1[m];
     if(c=='('){//因子是由左右括号和表达式组成
         m++;//把左括号扔掉
         result=expression_value();//处理表达式，
@@ -61,8 +61,8 @@ int factor_value(){//求一个因子的值
         int i=0;
 	    int sum=0,flag=0;
 	    memset(strbuf,0,sizeof(strbuf));
-	    while(isdigit(exp[m])||isalpha(exp[m])){
-			strbuf[i]=exp[m];
+	    while(isdigit(exp1[m])||isalpha(exp1[m])){
+			strbuf[i]=exp1[m];
 			i++;m++;
 		}
 		if (strbuf[0]=='0'&&(strbuf[1]!='x'&&strbuf[1]!='X'))
@@ -258,12 +258,12 @@ int Stmt(){
 					l++;
 				}
 				if(count%2==1){
-					exp[m]='-';m++;
+					exp1[m]='-';m++;
 				}else{
-					exp[m]='+';m++;
+					exp1[m]='+';m++;
 				}
 			}else{
-				exp[m]=all[l];
+				exp1[m]=all[l];
 				l++;m++;
 			}
 		}
@@ -314,39 +314,17 @@ int out(){
 }
 int main(){
 	memset(all,0,sizeof(all));
-	memset(exp,0,sizeof(exp));
+	memset(exp1,0,sizeof(exp1));
 	memset(strbuf,0,sizeof(strbuf));
 	int k=0,j=0,p=0;
 	char first[100000];
 	while((c=getchar())!=EOF){
 		first[k]=c;k++;
 	}
-	for(j=0;j<strlen(first);j++,p++){
-		
-		if(first[j]=='/'&&first[j+1]=='/'){
-			j++;j++;
-			while(first[j]!='\n'){
-				j++;
-			}
-			j++;
-		}else if(first[j]=='/'&&first[j+1]=='*'){
-			j++;j++;
-			while(!(first[j]=='*'&&first[j+1]=='/')){
-				j++;
-				if(j>strlen(first)){
-					return 1;
-				}
-			}
-			j++;j++;
-		}
-		all[p]=first[j];
-	}
-	k=0;
-	CompUnit();
+	printf("%s",first);
 	if (flag==1)
 	{
 		return 1;
 	}
-	out();
 	return 0;
 }
