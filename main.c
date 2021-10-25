@@ -319,6 +319,9 @@ int main(){
 	int k=0,j=0,p=0;
 	char first[100000];
 	while((c=getchar())!=EOF){
+		if(c=='\n'){
+			continue;
+		}
 		first[k]=c;k++;
 	}
 	printf("%s",first);
