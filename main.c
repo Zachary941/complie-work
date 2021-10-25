@@ -34,12 +34,16 @@ int term_value(){//求一个项的值
     int result=factor_value();
     while(1){
         char op=exp[m];
-        if(op=='*'||op=='/'){//如果有乘除，说明还有后续因子
+        if(op=='*'||op=='/'||op=='%'){//如果有乘除，说明还有后续因子
             m++;//从输入中取走一个字符
             int value=factor_value();
             if(op=='*')
                 result*=value;
-            else result/=value;
+            else if(op=='/'){
+            	result/=value;
+			}else{
+				result%=value;
+			}
         }
         else break;//没有因子了
     }
@@ -172,6 +176,7 @@ int Number(){
 	while(all[k]==' '||all[k]=='\t'||all[k]=='\n'||all[k]=='\r'){
 		k++;
 	}
+	return 0;
 }
 int Primary(){
 	if(all[k]=='('){
@@ -181,8 +186,9 @@ int Primary(){
 	}else if(isdigit(all[k])){
 		Number();
 	}else{
-		flag=1;return 0;
+		flag=1;
 	}
+	return 0;
 }
 int UnaryOp(){
 	if(all[k]=='+'){
@@ -190,8 +196,9 @@ int UnaryOp(){
 	}else if(all[k]=='-'){
 		get_true("-");
 	}else{
-		flag=1;return 0;
+		flag=1;
 	}
+	return 0;
 }
 int UnaryExp(){
 	if(all[k]=='('||isdigit(all[k])){
@@ -200,8 +207,9 @@ int UnaryExp(){
 		UnaryOp();
 		UnaryExp();
 	}else{
-		flag=1;return 0;
+		flag=1;
 	}
+	return 0;
 }
 int MulExp(){
 	UnaryExp();
@@ -215,7 +223,7 @@ int MulExp(){
 		}
 		UnaryExp();
 	}
-	
+	return 0;
 }
 int AddExp(){
 	MulExp();
@@ -227,10 +235,11 @@ int AddExp(){
 		}
 		MulExp();
 	}
-	
+	return 0;
 }
 int Exp(){
 	AddExp();
+	return 0;
 }
 
 int Stmt(){
