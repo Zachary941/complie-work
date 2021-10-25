@@ -5,7 +5,7 @@
 char c;
 char strbuf[200];
 char all[10000];
-char exp[2000]={0};
+char exp[2000];
 int flag=0,f=0,k=0;
 int sum=0;
 int m=0,count=0;
@@ -16,7 +16,7 @@ int factor_value();//读入一个因子，并且返回其值
 int term_value();//读入一项，返回其值
 int expression_value(){//求一个表达式的值
     int result=term_value();//求第一项的值
-    bool more=true;//有没有新的项
+    int more=1;//有没有新的项
     while(more){
         char op=exp[m];//看一个字符，不取走。cin会从输入流里面拿走
         if(op=='+'||op=='-'){
@@ -26,13 +26,13 @@ int expression_value(){//求一个表达式的值
                 result+=value;
             else result-=value;
         }
-        else more=false;//如果是右括号，说明输入流结束。
+        else more=0;//如果是右括号，说明输入流结束。
     }
     return result;
 }
 int term_value(){//求一个项的值
     int result=factor_value();
-    while(true){
+    while(1){
         char op=exp[m];
         if(op=='*'||op=='/'){//如果有乘除，说明还有后续因子
             m++;//从输入中取走一个字符
@@ -304,6 +304,9 @@ int out(){
 	return 0;
 }
 int main(){
+	memset(all,0,sizeof(all));
+	memset(exp,0,sizeof(exp));
+	memset(strbuf,0,sizeof(strbuf));
 	int k=0,j=0,p=0;
 	char first[100000];
 	while((c=getchar())!=EOF){
