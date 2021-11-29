@@ -41,7 +41,7 @@ public class lab4_1 {
                     i++;
                 }
                 i++;i++;
-            }else if (input2.charAt(i)==' '||input2.charAt(i)=='\n'){
+            }else if (input2.charAt(i)==' '||input2.charAt(i)=='\n'||input2.charAt(i)=='\t'){
                 continue;
             }else{
                 input1+=input2.charAt(i)+"";
