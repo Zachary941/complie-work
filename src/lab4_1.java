@@ -27,6 +27,7 @@ public class lab4_1 {
                 input2.append(str);
             }
         }
+        System.out.println(input2);
 //        input1.replace(0,input1.length(),"intmain(){//newline=10;intn;inti;intj;//m=1478;//intt;i=4;j=20;inttemp;temp=i;i=j;j=temp;putint(i);temp=10;putint(j);return0;}");
         for (int i = 0,j=0; i < input2.length(); i++,j++) {
             if (input2.charAt(i)=='/'&&input2.charAt(i+1)=='/'){
