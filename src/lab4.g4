@@ -10,7 +10,7 @@ varDecl      : bType varDef  (',' varDef )* ';';
 varDef       : ident
                 | ident '=' initVal;
 initVal      : exp;
-funcDef      : funcType ident '(' ')' block; // 保证当前 Ident 只为 "main"
+funcDef      : funcType ident '(' ')' block;
 funcType     : 'int';
 block        : '{'  (blockItem)* '}';
 blockItem    : decl | stmt;
@@ -45,8 +45,7 @@ lOrExp       : lAndExp
                 | lOrExp '||' lAndExp;  // [new]
 number             : Decimal_const | Octal_const | Hexadecimal_const;
 ident              :Nondigit(Nondigit|Decimal_const
-                    |Octal_const|Hexadecimal_const|'int')*;
-
+                    |Octal_const|Hexadecimal_const|'int'|'if')*;
 
 Nondigit           : [a-zA-Z_];
 
