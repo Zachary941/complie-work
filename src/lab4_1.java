@@ -23,7 +23,7 @@ public class lab4_1 {
                 input1.append(str);
             }
         }
-//        System.out.println(input1);
+        System.out.println(input1);
         CharStream inputStream = CharStreams.fromString(input1.toString());
         lab4Lexer lexer = new lab4Lexer(inputStream);
         CommonTokenStream tokenStream = new CommonTokenStream(lexer);
