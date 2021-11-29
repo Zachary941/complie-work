@@ -13,12 +13,12 @@ import java.util.Scanner;
 */
 public class lab4_1 {
     public static void main(String[] args) throws FileNotFoundException {
-        String inputName="D:\\学习\\2021大三上学期\\编译原理\\编译原理实验\\lab4\\src\\input.txt";
-        String outputName="./output.txt";
-//        String inputName=args[0];
-//        String outputName=args[1];
-//        PrintStream ps = new PrintStream(outputName);
-//        System.setOut(ps);
+        // String inputName="D:\\学习\\2021大三上学期\\编译原理\\编译原理实验\\lab4\\src\\input.txt";
+        // String outputName="./output.txt";
+       String inputName=args[0];
+       String outputName=args[1];
+       PrintStream ps = new PrintStream(outputName);
+       System.setOut(ps);
         String input1 = "";
         StringBuilder input2= new StringBuilder();
         try (Scanner sc = new Scanner(new FileReader(inputName))) {
