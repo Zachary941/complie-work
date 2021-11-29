@@ -262,19 +262,35 @@ public class Visitor extends lab4BaseVisitor<Void> {
             //返回函数名
             String fun_name = this.nowidentName;
             if (fun_name.equals("getint")) {
-                if (fun_decl[1] == 0) {
+                if (fun_decl[0] == 0) {
                     ir_code.add(0, "declare i32 @getint()\n");
-                    fun_decl[1] = 1;
+                    fun_decl[0] = 1;
                 }
                 ir_code.add("    %" + index + " = call i32 @getint()\n");
                 index++;
+                this.nowIRName="%"+(index-1);
             } else if (fun_name.equals("putint")) {
                 visit(ctx.funcRParams());
-                if (fun_decl[2] == 0) {
+                if (fun_decl[1] == 0) {
                     ir_code.add(0, "declare void @putint(i32)\n");
-                    fun_decl[2] = 1;
+                    fun_decl[1] = 1;
                 }
                 ir_code.add("    call void @putint(i32 " + this.nowIRName + ")\n");
+            }else if (fun_name.equals("getch")){
+                if (fun_decl[2]==0){
+                    ir_code.add(0,"declare i32 @getch()");
+                    fun_decl[2]=1;
+                }
+                ir_code.add("    %" + index + " = call i32 @getch()\n");
+                index++;
+                this.nowIRName="%"+(index-1);
+            }else if (fun_name.equals("putch")){
+                visit(ctx.funcRParams());
+                if (fun_decl[3] == 0) {
+                    ir_code.add(0, "declare void @putch(i32)\n");
+                    fun_decl[3] = 1;
+                }
+                ir_code.add("    call void @putch(i32 " + this.nowIRName + ")\n");
             }
         } else {
             ir_code.add("unaryexp error");
