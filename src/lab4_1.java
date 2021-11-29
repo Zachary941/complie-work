@@ -15,7 +15,7 @@ public class lab4_1 {
         String inputName=args[0];
         String outputName=args[1];
         PrintStream ps = new PrintStream(outputName);
-        System.setOut(ps);
+        // System.setOut(ps);
         StringBuilder input1= new StringBuilder();
         try (Scanner sc = new Scanner(new FileReader(inputName))) {
             while (sc.hasNext()) {
