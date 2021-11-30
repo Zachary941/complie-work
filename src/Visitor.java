@@ -75,6 +75,9 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 visit(ctx.initVal());
                 ir_code.add(var+ " = dso_local global i32 " + this.nownumber + "\n");
 //                System.out.println("@" + this.nowidentName + " = dso_local global i32 " + this.nownumber);
+            }else {
+                is_def_in_symbolsstack();
+                ir_code.add(var+ " = dso_local global i32 " + 0 + "\n");
             }
             symbolsstack.add(symbol);
 //            for (int i = 0; i < symbolsstack.size(); i++) {
