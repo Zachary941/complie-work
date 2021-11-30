@@ -8,6 +8,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
     String nowIRName = "";
     String nowType="";
     int is_global_variable = 0;
+    int if_alone=0;
     public static ArrayList<String> ir_code = new ArrayList<>();
     int[] fun_decl = {0, 0, 0, 0, 0, 0, 0, 0};
     public void is_def_in_symbolsstack() {
@@ -178,16 +179,18 @@ public class Visitor extends lab4BaseVisitor<Void> {
         } else if (ctx.children.size() >= 5) {
 //            System.out.println(ctx.children.get(0).getText());
             if (ctx.children.get(0).getText().equals("if")){
+                if_alone=0;
                 int cond=0,label1=0,label2=0,label3=0;
                 this.nowType="";
                 visit(ctx.cond());
                 //等待返回的
                 cond=index-1;
-                if (this.nowType.equals("i32")){
-                    ir_code.add("    %x"+index+" = trunc i32 %x"+cond+" to i1\n");
-                    cond=index;
-                    index++;
-                }
+                //不能用trunc直接截取
+//                if (this.nowType.equals("i32")){
+//                    ir_code.add("    %x"+index+" = trunc i32 %x"+cond+" to i1\n");
+//                    cond=index;
+//                    index++;
+//                }
                 label1=index;
                 label2=index+1;
                 index+=2;
@@ -211,6 +214,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 this.nowIRName="%x"+(index-1);
             }else if (ctx.children.get(0).getText().equals("while")){
                 visit(ctx.cond());
+                visit(ctx.stmt(0));
             }
         }
         return null;
@@ -220,7 +224,13 @@ public class Visitor extends lab4BaseVisitor<Void> {
     public Void visitRelExp(lab4Parser.RelExpContext ctx) {
         if (ctx.children.size()==1){
             visit(ctx.addExp());
+            if (if_alone==0){
+                ir_code.add("    %x"+index+" = icmp ne i32 %x"+(index-1)+", 0\n");
+                this.nowIRName="%x"+index;
+                index++;
+            }
         }else if (ctx.children.size()==3){
+            if_alone=1;
             String left="",right="";
             visit(ctx.relExp());
             left=this.nowIRName;
@@ -249,6 +259,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
         if (ctx.children.size()==1){
             visit(ctx.relExp());
         }else if (ctx.children.size()==3){
+            if_alone=1;
             String left="",right="";
             visit(ctx.eqExp());
             left=this.nowIRName;
@@ -260,6 +271,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 ir_code.add("    %x"+(index++)+" = icmp ne i32 "+left+", "+right+"\n");
             }
             this.nowIRName="%x"+(index-1);
+            this.nowType="i1";
         }else {
             System.out.println("eqexp error");
             System.exit(1);
@@ -272,6 +284,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
         if (ctx.children.size()==1){
             visit(ctx.eqExp());
         }else if (ctx.children.size()==3){
+            if_alone=1;
             String left="",right="";
             visit(ctx.lAndExp());
             left=this.nowIRName;
@@ -280,6 +293,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
             ir_code.add("    %x" +(index)+"= and i1 "+left+","+right+";\n");
             index++;
             this.nowIRName="%x"+(index-1);
+            this.nowType="i1";
         }else {
             System.out.println("landexp error");
             System.exit(1);
@@ -292,6 +306,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
         if (ctx.children.size()==1){
             visit(ctx.lAndExp());
         }else if (ctx.children.size()==3){
+            if_alone=1;
             String left="",right="";
             visit(ctx.lOrExp());
             left=this.nowIRName;
@@ -300,6 +315,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
             ir_code.add("    %x" +(index)+"= or i1 "+left+","+right+";\n");
             index++;
             this.nowIRName="%x"+(index-1);
+            this.nowType="i1";
         }else {
             System.out.println("lorexp error");
             System.exit(1);
@@ -385,8 +401,14 @@ public class Visitor extends lab4BaseVisitor<Void> {
 //                System.out.println("    %" + (index) + " = sub i32 " + 0 + ", %" + (index - 1));
                 ir_code.add("    %x" + (index) + " = sub i32 " + 0 + ", %x" + (index - 1) + "\n");
                 index++;
+            }else if (ctx.unaryOp().getText().equals("!")){
+                ir_code.add("    %x"+(index)+" = icmp eq i32 %x"+(index-1)+", 0\n");
+                index++;
+                ir_code.add("    %x"+index+" = zext i1 %x"+(index-1)+" to i32\n");
+                index++;
             }
             this.nowIRName = "%x" + (index - 1);
+            this.nowType="i32";
 
         } else if (ctx.children.size() >= 3) {
             visit(ctx.ident());
@@ -483,6 +505,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
 //                System.out.println("    %" + (index++) + " = load i32, i32* " + this.nowIRName);
                 ir_code.add("    %x" + (index++) + " = load i32, i32* " + this.nowIRName + "\n");
                 this.nowIRName = "%x" + (index - 1);
+                this.nowType="i32";
             }
         } else if (ctx.children.size() == 3) {
             visit(ctx.exp());
