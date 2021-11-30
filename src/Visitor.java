@@ -6,6 +6,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
     int nownumber = 0;
     String nowidentName = "";
     String nowIRName = "";
+    String nowType="";
     int is_global_variable = 0;
     public static ArrayList<String> ir_code = new ArrayList<>();
     int[] fun_decl = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -178,9 +179,15 @@ public class Visitor extends lab4BaseVisitor<Void> {
 //            System.out.println(ctx.children.get(0).getText());
             if (ctx.children.get(0).getText().equals("if")){
                 int cond=0,label1=0,label2=0,label3=0;
+                this.nowType="";
                 visit(ctx.cond());
                 //等待返回的
                 cond=index-1;
+                if (this.nowType.equals("i32")){
+                    ir_code.add("    %x"+index+" = trunc i32 %x"+cond+" to i1\n");
+                    cond=index;
+                    index++;
+                }
                 label1=index;
                 label2=index+1;
                 index+=2;
@@ -466,6 +473,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
 //                    System.out.println("    %" + (index++) + "= add i32 0," + this.nownumber);
                     ir_code.add("    %x" + (index++) + "= add i32 0," + this.nownumber + "\n");
                     this.nowIRName = "%x" + (index - 1);
+                    this.nowType="i32";
                 }
 
             } else {
