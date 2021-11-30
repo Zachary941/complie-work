@@ -2,22 +2,25 @@ import java.util.ArrayList;
 
 public class Visitor extends lab4BaseVisitor<Void> {
     int index = 1;
-    ArrayList<Symbol> symbolsstack = new ArrayList<>();
+    public static ArrayList<Symbol> symbolsstack = new ArrayList<>();
     int nownumber = 0;
     String nowidentName = "";
     String nowIRName = "";
     String nowType="";
-    int is_global_variable = 0;
+    int layer = 0;
     int if_alone=0;
     public static ArrayList<String> ir_code = new ArrayList<>();
     int[] fun_decl = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    //宏观定义和当前变量定义
     public void is_def_in_symbolsstack() {
-        for (Symbol symbol : this.symbolsstack) {
-            if (this.nowidentName.equals(symbol.old_name)) {
+        for (Symbol symbol : symbolsstack) {
+            if (this.nowidentName.equals(symbol.old_name)&&(symbol.layer==this.layer||symbol.layer==0)) {
                 ir_code.add("符号栈中已有符号" + nowidentName + "\n");
-//                System.out.println("符号栈中已有符号" + nowidentName);
+                System.out.println("符号栈中已有符号" + nowidentName);
                 System.exit(1);
             }
+
         }
     }
 
@@ -28,14 +31,14 @@ public class Visitor extends lab4BaseVisitor<Void> {
 
     @Override
     public Void visitConstDef(lab4Parser.ConstDefContext ctx) {
-        if (is_global_variable == 0) {
+        if (layer == 0) {
             visit(ctx.ident());
             if (ctx.children.size() == 3) {
                 visit(ctx.constInitVal());
                 ir_code.add("@" + this.nowidentName + " = dso_local global i32 " + this.nownumber + "\n");
 //                System.out.println("@" + this.nowidentName + " = dso_local global i32 " + this.nownumber);
                 is_def_in_symbolsstack();
-                Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), is_global_variable);
+                Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
                 symbol.num = this.nownumber;
                 symbol.isconst = true;
                 symbolsstack.add(symbol);
@@ -47,7 +50,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
 //            System.out.println("    %" + (index++) + " = alloca i32");
             visit(ctx.ident());
             is_def_in_symbolsstack();
-            Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), is_global_variable);
+            Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
             symbol.num = this.nownumber;
             symbol.isconst = true;
             symbolsstack.add(symbol);
@@ -62,9 +65,9 @@ public class Visitor extends lab4BaseVisitor<Void> {
 
     @Override
     public Void visitVarDef(lab4Parser.VarDefContext ctx) {
-        if (is_global_variable == 0) {
+        if (layer == 0) {
             visit(ctx.ident());
-            Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), is_global_variable);
+            Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
             if (ctx.children.size() == 3) {
                 visit(ctx.initVal());
                 is_def_in_symbolsstack();
@@ -81,12 +84,12 @@ public class Visitor extends lab4BaseVisitor<Void> {
             if (ctx.children.size() == 1) {
                 visit(ctx.ident());
                 is_def_in_symbolsstack();
-                Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), is_global_variable);
+                Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
                 symbolsstack.add(symbol);
             } else if (ctx.children.size() == 3) {
                 visit(ctx.ident());
                 is_def_in_symbolsstack();
-                Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), is_global_variable);
+                Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
                 symbolsstack.add(symbol);
                 visit(ctx.initVal());
                 ir_code.add("    store i32 %x" + (index - 1) + ", i32* %x" + returnindex + "\n");
@@ -105,14 +108,13 @@ public class Visitor extends lab4BaseVisitor<Void> {
         if (ctx.children.size() == 5) {
             ir_code.add("define dso_local i32 @main()\n");
 //            System.out.println("define dso_local i32 @main()");
-            is_global_variable = 1;
             ir_code.add("{\n");
             visit(ctx.block());
             ir_code.add("}\n");
             return null;
         } else {
             ir_code.add("funcdef error\n");
-//            System.out.println("funcdef error");
+            System.out.println("funcdef error");
             System.exit(1);
         }
 
@@ -122,19 +124,25 @@ public class Visitor extends lab4BaseVisitor<Void> {
     @Override
     public Void visitBlock(lab4Parser.BlockContext ctx) {
 //        System.out.println("{");
-
+        layer++;
         if (ctx.children.size() >= 2) {
             for (int i = 0; i < ctx.children.size() - 2; i++) {
                 visit(ctx.blockItem(i));
             }
 //            System.out.println("}");
-
         } else {
 
-//            System.out.println("block error");
+            System.out.println("block error");
             ir_code.add("block error");
             System.exit(1);
         }
+        for (int i = symbolsstack.size()-1; i>=0; i--) {
+            if (symbolsstack.get(i).layer==layer){
+//                System.out.println("已删除"+symbolsstack.get(i).old_name+"  "+layer);
+                symbolsstack.remove(i);
+            }
+        }
+        layer--;
         return null;
     }
 
@@ -153,7 +161,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
             //返回到this.nowIRName
             lval = this.nowIRName;
             for (Symbol symbol : symbolsstack) {
-                if (symbol.new_name.equals(lval)) {
+                if (symbol.new_name.equals(lval)&&(symbol.layer==this.layer||symbol.layer==0)) {
                     if (symbol.isconst) {
                         ir_code.add("不可改变常量值，该常量为" + symbol.old_name + "\n");
 //                        System.out.println("不可改变常量值，该常量为" +symbol.old_name);
@@ -327,18 +335,17 @@ public class Visitor extends lab4BaseVisitor<Void> {
     public Void visitLVal(lab4Parser.LValContext ctx) {
         visit(ctx.ident());
         int flag1 = 0;
-        for (Symbol symbol : this.symbolsstack) {
+        for (Symbol symbol : symbolsstack) {
             if (symbol.old_name.equals(this.nowidentName)) {
                 this.nowIRName = symbol.new_name;
                 flag1 = 1;
             }
         }
         if (flag1 == 0) {
-//            System.out.println("字符表中不存在字符" + this.nowidentName);
+            System.out.println("字符表中不存在字符" + this.nowidentName);
             ir_code.add("字符表中不存在字符" + this.nowidentName + "\n");
             System.exit(1);
         }
-
         return null;
     }
 
@@ -348,7 +355,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
             visit(ctx.mulExp());
         } else if (ctx.children.size() == 3)// addExp ('+' | '-') mulExp
         {
-            if (is_global_variable == 0) {
+            if (layer == 0) {
                 int lhs = 0, rhs = 0, result = 0;
                 visit(ctx.addExp());
                 lhs = this.nownumber;
@@ -383,7 +390,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
             }
 
         } else {
-//            System.out.println("add exp wrong");
+            System.out.println("add exp wrong");
             ir_code.add("add exp wrong\n");
             System.exit(1);
         }
@@ -462,7 +469,8 @@ public class Visitor extends lab4BaseVisitor<Void> {
 
             }
         } else {
-            ir_code.add("unaryexp error");
+//            ir_code.add("unaryexp error");
+            System.out.println("unaryexp error");
             System.exit(1);
         }
         return null;
@@ -493,7 +501,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
                         this.nownumber = this.nownumber * 10 + strnum.charAt(i) - '0';
                     }
                 }
-                if (is_global_variable != 0) {
+                if (layer != 0) {
 //                    System.out.println("    %" + (index++) + "= add i32 0," + this.nownumber);
                     ir_code.add("    %x" + (index++) + "= add i32 0," + this.nownumber + "\n");
                     this.nowIRName = "%x" + (index - 1);
@@ -510,7 +518,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
         } else if (ctx.children.size() == 3) {
             visit(ctx.exp());
         } else {
-//            System.out.println("primaryexp error");
+            System.out.println("primaryexp error");
             ir_code.add("primaryexp error\n");
             System.exit(1);
         }
@@ -528,7 +536,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
         if (ctx.children.size() == 1) {
             visit(ctx.unaryExp());
         } else if (ctx.children.size() == 3) {
-            if (is_global_variable == 0) {
+            if (layer == 0) {
                 int lhs = 0, rhs = 0, result = 0;
                 visit(ctx.mulExp());
                 lhs = this.nownumber;
@@ -571,7 +579,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
             }
 
         } else {
-//            System.out.println("MulExp wrong");
+            System.out.println("MulExp wrong");
             ir_code.add("MulExp wrong\n");
             System.exit(1);
         }
