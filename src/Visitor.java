@@ -230,8 +230,21 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 }
                 this.nowIRName="%x"+(index-1);
             }else if (ctx.children.get(0).getText().equals("while")){
+                int cond=0,label1=0,label2=0,start=0;
+                ir_code.add("    br label %x"+(index)+"\n");
+                ir_code.add("\nx"+index+":\n");
+                start=index;
+                index++;
                 visit(ctx.cond());
+                cond=index-1;
+                label1=index;
+                label2=index+1;
+                index+=2;
+                ir_code.add("    br i1 %x"+cond+",label %x"+label1+", label %x"+label2+"\n");
+                ir_code.add("\nx"+label1+":\n");
                 visit(ctx.stmt(0));
+                ir_code.add("    br label %x"+start+"\n");
+                ir_code.add("\nx"+label2+":\n");
             }
         }
         return null;
