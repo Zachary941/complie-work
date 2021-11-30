@@ -236,6 +236,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 ir_code.add("    %x"+(index++)+" = icmp sle i32 "+left+", "+right+"\n");
             }
             this.nowIRName="%x"+(index-1);
+            this.nowType="i1";
         }else {
             System.out.println("relexp");
             System.exit(1);
@@ -362,6 +363,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
                     ir_code.add("    %x" + (index++) + " = sub i32 " + lhs + ", " + rhs + "\n");
                 }
                 nowIRName = "%x" + (index - 1);
+                this.nowType="i32";
             }
 
         } else {
@@ -542,6 +544,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
                     ir_code.add("    %x" + (index++) + " = srem i32 " + lhs + ", " + rhs + "\n");
                 }
                 nowIRName = "%x" + (index - 1);
+                this.nowType="i32";
             }
 
         } else {
