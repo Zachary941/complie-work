@@ -185,10 +185,18 @@ public class Visitor extends lab4BaseVisitor<Void> {
             //输出store
 //            System.out.println("    store i32 " + exp + ", i32* " + lval);
             ir_code.add("    store i32 " + exp + ", i32* " + lval + "\n");
-        }else if (ctx.children.size()==1){
+        }else if (ctx.children.size()==1&&!ctx.getChild(0).toString().equals(";")){
             visit(ctx.block());
-        }else if (ctx.children.size() == 2) {
+            System.out.println("use block");
+        }else if (ctx.getChild(0).getText().equals("continue")) {
+            ir_code.add("continue");
+            System.out.println("use continue");
+        } else if (ctx.getChild(0).getText().equals("break")) {
+            ir_code.add("break");
+            System.out.println("use break");
+        } else if (ctx.children.size()==2&&ctx.getChild(1).toString().equals(";")) {
             visit(ctx.exp());
+            System.out.println("use exp");
         } else if (ctx.children.size() == 3) {
             visit(ctx.exp());
 //            System.out.println("    ret i32 " + this.nowIRName);
@@ -230,7 +238,9 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 }
                 this.nowIRName="%x"+(index-1);
             }else if (ctx.children.get(0).getText().equals("while")){
-                int cond=0,label1=0,label2=0,start=0;
+                System.out.println("use while");
+                int cond=0,label1=0,label2=0,start=0,whilestart=0,whileend=0;
+                whilestart=ir_code.size()-1;
                 ir_code.add("    br label %x"+(index)+"\n");
                 ir_code.add("\nx"+index+":\n");
                 start=index;
@@ -245,6 +255,14 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 visit(ctx.stmt(0));
                 ir_code.add("    br label %x"+start+"\n");
                 ir_code.add("\nx"+label2+":\n");
+                whileend=ir_code.size()-1;
+                for (int i = whilestart; i <= whileend; i++) {
+                    if (ir_code.get(i).equals("break")){
+                        ir_code.set(i,"    br label %x"+label2+"\n");
+                    }else if (ir_code.get(i).equals("continue")){
+                        ir_code.set(i,"    br label %x"+start+"\n");
+                    }
+                }
             }
         }
         return null;
