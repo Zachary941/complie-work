@@ -351,6 +351,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
 
     @Override
     public Void visitLOrExp(lab4Parser.LOrExpContext ctx) {
+        if_alone=0;
         if (ctx.children.size()==1){
             visit(ctx.lAndExp());
         }else if (ctx.children.size()==3){
@@ -488,7 +489,7 @@ public class Visitor extends lab4BaseVisitor<Void> {
                 ir_code.add("    call void @putint(i32 " + this.nowIRName + ")\n");
             }else if (fun_name.equals("getch")){
                 if (fun_decl[2]==0){
-                    ir_code.add(0,"declare i32 @getch()");
+                    ir_code.add(0,"declare i32 @getch()\n");
                     fun_decl[2]=1;
                 }
                 ir_code.add("    %x" + index + " = call i32 @getch()\n");
