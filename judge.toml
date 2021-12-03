@@ -1,7 +1,6 @@
-[jobs.test-submit]
-
-image={ source = "dockerfile",path="."}
+[jobs.lab7]
+image = { source = "dockerfile", path = "."}
 
 run = [
-  "cat $input | ./main"
+   "java -cp dst/:src/antlr-4.9.2-complete.jar:src/ lab4_1 $input $ir",
 ]
