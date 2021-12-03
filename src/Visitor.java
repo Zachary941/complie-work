@@ -165,7 +165,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     public Void visitConstInitVal(lab7Parser.ConstInitValContext ctx) {
         if (ctx.children.size()==1){
             visit(ctx.constExp());
-        }else{
+        }else if (ctx.children.size()>=3){
             num_of_initval++;
             if (layer==0){
                 if (array2==0){
@@ -271,7 +271,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
 
     @Override
     public Void visitVarDef(lab7Parser.VarDefContext ctx) {
-        if (ctx.children.size()<=3)
+        if (ctx.children.size()==1||(ctx.children.size()==3&&!ctx.getChild(2).getText().equals("[")))
         {
             if (layer == 0) {
                 String var="";
@@ -406,7 +406,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                     symbol.array1=array1;
                     symbolsstack.add(symbol);
                     visit(ctx.initVal());
-                }else{
+                }else if (ctx.children.size()==9){
                     //二维数组初始化
                     visit(ctx.constExp(0));
                     array1=this.nownumber;
@@ -432,6 +432,49 @@ public class Visitor extends lab7BaseVisitor<Void> {
                     symbol.array1=array1;symbol.array2=array2;
                     symbolsstack.add(symbol);
                     visit(ctx.initVal());
+                }else if (ctx.children.size()==4){
+                    visit(ctx.constExp(0));
+                    array1=this.nownumber;
+                    ir_code.add("    %x"+index+" = alloca ["+array1+" x i32]\n");
+                    array_start=index;
+                    index++;
+                    ir_code.add("    %x"+index+" = getelementptr ["+array1+" x i32], ["+array1+" x i32]* %x"+(index-1)+", i32 0, i32 0\n");
+                    index++;
+                    ir_code.add("    call void @memset(i32* %x"+(index-1)+", i32 0, i32 "+array1*4+")\n");
+                    if (fun_decl[6]==0)
+                    {
+                        ir_code.add(0,"declare void @memset(i32*, i32, i32)\n");
+                        fun_decl[6]=1;
+                    }
+                    //入栈
+                    Symbol symbol=new Symbol(name,"%x"+array_start,layer);
+                    symbol.type="one_array";
+                    symbol.array1=array1;
+                    symbolsstack.add(symbol);
+                }else if (ctx.children.size()==7){
+                    visit(ctx.constExp(0));
+                    array1=this.nownumber;
+                    visit(ctx.constExp(1));
+                    array2=this.nownumber;
+                    //    %1 = alloca [2 x [2 x i32]]
+                    ir_code.add("    %x"+index+" = alloca ["+array1+" x ["+array2+" x i32]]\n");
+                    array_start=index;
+                    index++;
+                    //%3 = getelementptr [2 x [2 x i32]], [2 x [2 x i32]]* %2, i32 0, i32 0
+                    ir_code.add("    %x"+index+" = getelementptr ["+array1+" x ["+array2+" x i32]], ["+array1+" x ["+array2+" x i32]]* %x"+(index-1)+", i32 0, i32 0,i32 0\n");
+
+                    index++;
+                    ir_code.add("    call void @memset(i32* %x"+(index-1)+", i32 0, i32 "+array1*array2*4+")\n");
+                    if (fun_decl[6]==0)
+                    {
+                        ir_code.add(0,"declare void @memset(i32*, i32, i32)\n");
+                        fun_decl[6]=1;
+                    }
+                    //入栈
+                    Symbol symbol=new Symbol(name,"%x"+array_start,layer);
+                    symbol.type="two_array";
+                    symbol.array1=array1;symbol.array2=array2;
+                    symbolsstack.add(symbol);
                 }
             }
         }
@@ -442,7 +485,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     public Void visitInitVal(lab7Parser.InitValContext ctx) {
         if (ctx.children.size()==1){
             visit(ctx.exp());
-        }else{
+        }else if(ctx.children.size()>=3){
             num_of_initval++;
             if (layer==0){
                 if (array2==0){
@@ -886,7 +929,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 visit(ctx.exp(1));
                 tmp_array2=index-1;
                 //%1 = getelementptr [5 x [4 x i32]], [5 x [4 x i32]]* @a, i32 0, i32 2, i32 3
-                ir_code.add("    %x"+index+" = getelementptrhh ["+symbol1.array1+" x ["+symbol1.array2+" x i32]], ["+symbol1.array1+" x ["+symbol1.array2+" x i32]]* "+symbol1.new_name+", i32 0, i32 %x"+tmp_array1+", i32 %x"+tmp_array2+"\n");
+                ir_code.add("    %x"+index+" = getelementptr ["+symbol1.array1+" x ["+symbol1.array2+" x i32]], ["+symbol1.array1+" x ["+symbol1.array2+" x i32]]* "+symbol1.new_name+", i32 0, i32 %x"+tmp_array1+", i32 %x"+tmp_array2+"\n");
                 index++;
                 this.nowIRName="%x"+(index-1);
             }
