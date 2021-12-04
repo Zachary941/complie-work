@@ -351,6 +351,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                     //一维数组初始化
                     visit(ctx.constExp(0));
                     array1 = this.nownumber;
+                    //只处理了这部分其他尚未处理
                     if (array1 < 0) {
                         System.out.println("数组长度不能为负数");
                         System.exit(1);

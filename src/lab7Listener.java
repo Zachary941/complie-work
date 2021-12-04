@@ -127,6 +127,26 @@ public interface lab7Listener extends ParseTreeListener {
 	 */
 	void exitFuncType(lab7Parser.FuncTypeContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link lab7Parser#funcFParams}.
+	 * @param ctx the parse tree
+	 */
+	void enterFuncFParams(lab7Parser.FuncFParamsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link lab7Parser#funcFParams}.
+	 * @param ctx the parse tree
+	 */
+	void exitFuncFParams(lab7Parser.FuncFParamsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link lab7Parser#funcFParam}.
+	 * @param ctx the parse tree
+	 */
+	void enterFuncFParam(lab7Parser.FuncFParamContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link lab7Parser#funcFParam}.
+	 * @param ctx the parse tree
+	 */
+	void exitFuncFParam(lab7Parser.FuncFParamContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link lab7Parser#block}.
 	 * @param ctx the parse tree
 	 */

@@ -82,6 +82,18 @@ public interface lab7Visitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFuncType(lab7Parser.FuncTypeContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link lab7Parser#funcFParams}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFuncFParams(lab7Parser.FuncFParamsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link lab7Parser#funcFParam}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFuncFParam(lab7Parser.FuncFParamContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link lab7Parser#block}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

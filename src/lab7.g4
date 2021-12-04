@@ -1,17 +1,19 @@
 grammar lab7;
-compUnit     : decl* funcDef;
+compUnit     : (decl | funcDef)+;// [changed]
 decl         : constDecl |  varDecl;
 constDecl    : 'const' bType constDef  (',' constDef)* ';';
 bType       : 'int';
-constDef     : ident ( '[' constExp ']' )* '=' constInitVal; // [changed]
-constInitVal : constExp | '{' (constInitVal ( ',' constInitVal )*)?   '}'; // [changed]
+constDef     : ident ( '[' constExp ']' )* '=' constInitVal;
+constInitVal : constExp | '{' (constInitVal ( ',' constInitVal )*)?   '}';
 constExp     : addExp;
 varDecl      : bType varDef  (',' varDef )* ';';
 varDef       : ident ( '[' constExp ']' )*
-                | ident ('[' constExp ']')* '=' initVal;// [changed]
-initVal      : exp | '{' ( initVal ( ',' initVal )* )? '}'; // [changed];
-funcDef      : funcType ident '(' ')' block;
-funcType     : 'int';
+                | ident ('[' constExp ']')* '=' initVal;
+initVal      : exp | '{' ( initVal ( ',' initVal )* )? '}';
+funcDef      : funcType ident '(' (funcFParams)? ')' block;// [changed]
+funcType     : 'void' | 'int';// [changed]
+funcFParams  : funcFParam ( ',' funcFParam )* ;// [new]
+funcFParam   : bType ident ('[' ']' ( '[' exp ']' )*)?; // [new]
 block        : '{'  (blockItem)* '}';
 blockItem    : decl | stmt;
 stmt         : lVal '=' exp ';'
@@ -21,15 +23,15 @@ stmt         : lVal '=' exp ';'
                 |  exp? ';'
                 | 'if' '(' cond ')' stmt ( 'else' stmt )?
                 | 'while' '(' cond ')' stmt
-                | 'return' exp ';'; // [changed]
+                | 'return' (exp)? ';'; // [changed]
 exp          : addExp;
 cond         : lOrExp; // [new]
-lVal         : ident ('[' exp ']')* ;// [changed]
+lVal         : ident ('[' exp ']')* ;
 primaryExp   : '(' exp ')' | lVal | number;
 unaryExp     : primaryExp
                 | ident '(' (funcRParams)? ')'
                 | unaryOp unaryExp;
-unaryOp      : '+' | '-' | '!';  // 保证 '!' 只出现在 Cond 中 [changed]
+unaryOp      : '+' | '-' | '!';
 funcRParams  : exp ( ',' exp )*;
 mulExp       : unaryExp
                 | mulExp ('*' | '/' | '%') unaryExp;
