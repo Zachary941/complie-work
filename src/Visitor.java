@@ -22,6 +22,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     Symbol func_symbol;
     int no_load;
     int no_add;
+    ArrayList<String> reparm=new ArrayList<>();
     //宏观定义和当前变量定义
     public void is_def_in_symbolsstack() {
         for (Symbol symbol : symbolsstack) {
@@ -640,6 +641,34 @@ public class Visitor extends lab7BaseVisitor<Void> {
             visit(ctx.funcFParams());
             ir_code.add(")\n");
             ir_code.add("{\n");
+            for (int i = 0; i < symbol.params.size(); i++) {
+                if (symbol.params.get(i).type==0)
+                {
+                    ir_code.add("    %x"+index+"=alloca i32\n");
+                    ir_code.add("    store i32 "+symbol.params.get(i).new_name+",i32* %x"+index+"\n");
+                    index++;
+                    Symbol symbol1=new Symbol(symbol.params.get(i).old_name,"%x"+(index-1),layer);
+                    symbol1.type="func_var";
+                    symbolsstack.add(symbol1);
+                }else if (symbol.params.get(i).type==1){
+                    //将参数进行重新声明方便赋值
+                    ir_code.add("    %x"+index+"=alloca i32*\n");
+                    ir_code.add("    store i32* "+symbol.params.get(i).new_name+",i32* * %x"+index+"\n");
+                    index++;
+                    Symbol symbol1=new Symbol(symbol.params.get(i).old_name,"%x"+(index-1),layer);
+                    symbol1.type="func_one_array";
+                    symbolsstack.add(symbol1);
+                }else if (symbol.params.get(i).type==2){
+                    //将参数进行重新声明方便赋值
+                    ir_code.add("    %x"+index+"=alloca "+symbol.params.get(i).paramtype+"\n");
+                    ir_code.add("    store "+symbol.params.get(i).paramtype+" "+symbol.params.get(i).new_name+","+symbol.params.get(i).paramtype+" * %x"+index+"\n");
+                    index++;
+                    Symbol symbol1=new Symbol(symbol.params.get(i).old_name,"%x"+(index-1),layer);
+                    symbol1.type="func_two_array";
+                    symbol1.array_long_for_two=this.nownumber;
+                    symbolsstack.add(symbol1);
+                }
+            }
             visit(ctx.block());
             if (functype.equals("void")){
                 ir_code.add("    ret void\n");
@@ -673,22 +702,12 @@ public class Visitor extends lab7BaseVisitor<Void> {
             //将参数放入函数的symbol里去
             Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"i32",0);
             func_symbol.params.add(funcfparam);
-
-            //将参数加入符号栈
-            Symbol symbol=new Symbol(this.nowidentName,"%x"+index,layer);
-            symbol.type="func_var";
-            symbolsstack.add(symbol);
             index++;
-
         }else if (ctx.children.size()==4){
             visit(ctx.ident());
             ir_code.add("i32* %x"+index);
             Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"i32*",1);
             func_symbol.params.add(funcfparam);
-
-            Symbol symbol=new Symbol(this.nowidentName,"%x"+index,layer);
-            symbol.type="func_one_array";
-            symbolsstack.add(symbol);
             index++;
 
         }else if (ctx.children.size()>=6){
@@ -699,11 +718,6 @@ public class Visitor extends lab7BaseVisitor<Void> {
             ir_code.add("["+this.nownumber+" x i32]* %x"+index);
             Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"["+this.nownumber+" x i32]*",2);
             func_symbol.params.add(funcfparam);
-
-            Symbol symbol=new Symbol(this.nowidentName,"%x"+index,layer);
-            symbol.type="func_two_array";
-            symbol.array_long_for_two=this.nownumber;
-            symbolsstack.add(symbol);
             index++;
         }
         return null;
@@ -973,9 +987,11 @@ public class Visitor extends lab7BaseVisitor<Void> {
         }
         System.out.println(for_array_addr+"hhh"+tmp_symbol.old_name+tmp_symbol.type);
         if (for_array_addr==2){
+            //在int内使用函数的时候传参前的规范化
             if (tmp_symbol.type.equals("one_array")){
                 ir_code.add("    %x"+index+" = getelementptr ["+tmp_symbol.array1+" x i32], ["+tmp_symbol.array1+" x i32]* "+tmp_symbol.new_name+", i32 0, i32 0\n");
-                this.nowIRName="%x"+index;no_load=1;
+                this.nowIRName="%x"+index;
+                no_load=1;
                 index++;
             }else if (tmp_symbol.type.equals("two_array")){
                 visit(ctx.exp(0));
@@ -1002,9 +1018,9 @@ public class Visitor extends lab7BaseVisitor<Void> {
                     }
                 }
             }
-            if (tmp_symbol.type.equals("func_var")){
-                no_load=1;
-            }
+//            if (tmp_symbol.type.equals("func_var")){
+//                no_load=1;
+//            }
         } else {
             //处理数组
             if (ctx.children.size() == 4) {
@@ -1029,14 +1045,15 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 }
                 visit(ctx.exp(0));
                 if (symbol1.type.equals("func_one_array")){
-                    //    %7 = getelementptr i32, i32* %5, i32 %6
-                    ir_code.add("    %x"+index+" = getelementptr i32, i32* "+symbol1.new_name+", i32 "+this.nowIRName+"\n");
+                    //%5 = load i32* , i32* * %3
+                    ir_code.add("    %x"+index+" = load i32* , i32* * "+symbol1.new_name+"\n");
+                    index++;
+                    ir_code.add("    %x"+index+" = getelementptr i32, i32* %x"+(index-1)+", i32 "+this.nowIRName+"\n");
                 }else {
                     ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array1 + " x i32], [" + symbol1.array1 + " x i32]* " + symbol1.new_name + ", i32 0, i32 %x" + (index - 1) + "\n");
                 }
                 index++;
                 this.nowIRName = "%x" + (index - 1);
-
             } else if (ctx.children.size() == 7) {
                 //处理二维数组
                 Symbol symbol1 = new Symbol();
@@ -1063,7 +1080,10 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 visit(ctx.exp(1));
                 tmp_array2 = index - 1;
                 if (symbol1.type.equals("func_two_array")){
-                    ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array_long_for_two + " x i32], [" + symbol1.array_long_for_two + " x i32]* " + symbol1.new_name + ", i32 %x" + tmp_array1 + ", i32 %x" + tmp_array2 + "\n");
+                    //    %18 = load [3 x i32]*, [3 x i32]* * %5
+                    ir_code.add("    %x"+index+" = load ["+symbol1.array_long_for_two+" x i32]* , [ " + symbol1.array_long_for_two + " x i32]* * "+symbol1.new_name+"\n");
+                    index++;
+                    ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array_long_for_two + " x i32], [" + symbol1.array_long_for_two + " x i32]* %x" + (index-1) + ", i32 %x" + tmp_array1 + ", i32 %x" + tmp_array2 + "\n");
                     index++;
                     this.nowIRName = "%x" + (index - 1);
                 }else {
@@ -1323,6 +1343,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
             } else {
                 visit(ctx.lVal());
 //                System.out.println("    %" + (index++) + " = load i32, i32* " + this.nowIRName);
+                //
                 if (layer != 0&&no_load ==0) {
                     ir_code.add("    %x" + (index++) + " = load i32, i32* " + this.nowIRName + "\n");
                     this.nowIRName = "%x" + (index - 1);
@@ -1407,7 +1428,6 @@ public class Visitor extends lab7BaseVisitor<Void> {
         for (int i = 0; i < ctx.getChildCount(); i++) {
             this.nowidentName = this.nowidentName + ctx.getChild(i).getText();
         }
-
         return super.visitIdent(ctx);
     }
 }
