@@ -16,7 +16,12 @@ public class Visitor extends lab7BaseVisitor<Void> {
     int array2 = 0;
     int array_start = 0;
     int second_i32 = 0;
-
+    ArrayList<String> func_param=new ArrayList<>();
+    int for_array_addr=0;
+    ArrayList<Integer> func_param_add=new ArrayList<>();
+    Symbol func_symbol;
+    int no_load;
+    int no_add;
     //宏观定义和当前变量定义
     public void is_def_in_symbolsstack() {
         for (Symbol symbol : symbolsstack) {
@@ -25,7 +30,6 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 System.out.println("符号栈中已有符号" + nowidentName + symbol.layer);
                 System.exit(1);
             }
-
         }
     }
 
@@ -599,14 +603,49 @@ public class Visitor extends lab7BaseVisitor<Void> {
 
     @Override
     public Void visitFuncDef(lab7Parser.FuncDefContext ctx) {
+        layer=0;
         if (ctx.children.size() == 5) {
-            ir_code.add("define dso_local i32 @main()\n");
+            String functype="";
+            if (ctx.funcType().getText().equals("void")){
+                functype="void";
+            }else if (ctx.funcType().getText().equals("int")){
+                functype="i32";
+            }
+            visit(ctx.ident());
+            ir_code.add("define dso_local "+functype+" @"+this.nowidentName+"()\n");
+            Symbol symbol=new Symbol(this.nowidentName,"@"+this.nowidentName,layer);
+            symbol.type=functype+"_func";
+            symbolsstack.add(symbol);
 //            System.out.println("define dso_local i32 @main()");
             ir_code.add("{\n");
+            layer++;
             visit(ctx.block());
             ir_code.add("}\n");
             return null;
-        } else {
+        }else if (ctx.children.size()==6){
+            String functype="";
+            if (ctx.funcType().getText().equals("void")){
+                functype="void";
+            }else if (ctx.funcType().getText().equals("int")){
+                functype="i32";
+            }
+            visit(ctx.ident());
+            ir_code.add("define dso_local "+functype+" @"+this.nowidentName+"(");
+
+            Symbol symbol=new Symbol(this.nowidentName,"@"+this.nowidentName,layer);
+            symbol.type=functype+"_func";
+            symbolsstack.add(symbol);
+            func_symbol=symbolsstack.get(symbolsstack.size()-1);
+            layer=1;
+            visit(ctx.funcFParams());
+            ir_code.add(")\n");
+            ir_code.add("{\n");
+            visit(ctx.block());
+            if (functype.equals("void")){
+                ir_code.add("    ret void\n");
+            }
+            ir_code.add("}\n");
+        }else {
             ir_code.add("funcdef error\n");
             System.out.println("funcdef error");
             System.exit(1);
@@ -616,9 +655,64 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
+    public Void visitFuncFParams(lab7Parser.FuncFParamsContext ctx) {
+        for (int i = 0; i < ctx.children.size()/2+1; i++) {
+            visit(ctx.funcFParam(i));
+            if (i!=ctx.children.size()/2){
+                ir_code.add(",");
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitFuncFParam(lab7Parser.FuncFParamContext ctx) {
+        if (ctx.children.size()==2){
+            visit(ctx.ident());
+            ir_code.add("i32 %x"+index);
+            //将参数放入函数的symbol里去
+            Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"i32",0);
+            func_symbol.params.add(funcfparam);
+
+            //将参数加入符号栈
+            Symbol symbol=new Symbol(this.nowidentName,"%x"+index,layer);
+            symbol.type="func_var";
+            symbolsstack.add(symbol);
+            index++;
+
+        }else if (ctx.children.size()==4){
+            visit(ctx.ident());
+            ir_code.add("i32* %x"+index);
+            Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"i32*",1);
+            func_symbol.params.add(funcfparam);
+
+            Symbol symbol=new Symbol(this.nowidentName,"%x"+index,layer);
+            symbol.type="func_one_array";
+            symbolsstack.add(symbol);
+            index++;
+
+        }else if (ctx.children.size()>=6){
+            visit(ctx.ident());
+            no_add=1;
+            visit(ctx.exp(0));
+            no_add=0;
+            ir_code.add("["+this.nownumber+" x i32]* %x"+index);
+            Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"["+this.nownumber+" x i32]*",2);
+            func_symbol.params.add(funcfparam);
+
+            Symbol symbol=new Symbol(this.nowidentName,"%x"+index,layer);
+            symbol.type="func_two_array";
+            symbol.array_long_for_two=this.nownumber;
+            symbolsstack.add(symbol);
+            index++;
+        }
+        return null;
+    }
+
+    @Override
     public Void visitBlock(lab7Parser.BlockContext ctx) {
 //        System.out.println("{");
-        layer++;
+
         if (ctx.children.size() >= 2) {
             for (int i = 0; i < ctx.children.size() - 2; i++) {
                 visit(ctx.blockItem(i));
@@ -671,6 +765,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
 //            System.out.println("    store i32 " + exp + ", i32* " + lval);
             ir_code.add("    store i32 " + exp + ", i32* " + lval + "\n");
         } else if (ctx.children.size() == 1 && !ctx.getChild(0).toString().equals(";")) {
+            layer++;
             visit(ctx.block());
             System.out.println("use block");
         } else if (ctx.getChild(0).getText().equals("continue")) {
@@ -861,9 +956,44 @@ public class Visitor extends lab7BaseVisitor<Void> {
 
     @Override
     public Void visitLVal(lab7Parser.LValContext ctx) {
-        if (ctx.children.size() == 1) {
+        visit(ctx.ident());
+        int flag1 = 0;
+        Symbol tmp_symbol=new Symbol();
+        for (Symbol symbol : symbolsstack) {
+            if (symbol.old_name.equals(this.nowidentName)) {
+                this.nowIRName = symbol.new_name;
+                tmp_symbol=symbol;
+                flag1 = 1;
+            }
+        }
+        if (flag1 == 0) {
+            System.out.println("字符表中不存在字符" + this.nowidentName);
+            ir_code.add("字符表中不存在字符" + this.nowidentName + "\n");
+            System.exit(1);
+        }
+        System.out.println(for_array_addr+"hhh"+tmp_symbol.old_name+tmp_symbol.type);
+        if (for_array_addr==2){
+            if (tmp_symbol.type.equals("one_array")){
+                ir_code.add("    %x"+index+" = getelementptr ["+tmp_symbol.array1+" x i32], ["+tmp_symbol.array1+" x i32]* "+tmp_symbol.new_name+", i32 0, i32 0\n");
+                this.nowIRName="%x"+index;no_load=1;
+                index++;
+            }else if (tmp_symbol.type.equals("two_array")){
+                visit(ctx.exp(0));
+                //    %8 = getelementptr [2 x [3 x i32]], [2 x [3 x i32]]* %1, i32 0, i32 0
+                ir_code.add("    %x"+index+" = getelementptr ["+tmp_symbol.array1+" x ["+tmp_symbol.array2+" x i32]], ["+tmp_symbol.array1+" x ["+tmp_symbol.array2+" x i32]]* "+tmp_symbol.new_name+", i32 0, i32 %x"+(index-1)+",i32 0\n");
+                no_load=1;
+                this.nowIRName="%x"+index;
+                index++;
+            }
+        }else if (for_array_addr==3){
+            if (tmp_symbol.type.equals("two_array")){
+                ir_code.add("    %x" + index + " = getelementptr [" + tmp_symbol.array1 + " x [" + tmp_symbol.array2 + " x i32]], [" + tmp_symbol.array1 + " x [" + tmp_symbol.array2 + " x i32]]* " + tmp_symbol.new_name + ", i32 0, i32 0;\n");
+                this.nowIRName="%x"+index;
+                index++;
+                no_load=1;
+            }
+        }else if (ctx.children.size() == 1&&(tmp_symbol.type.equals("var")||tmp_symbol.type.equals("func_var"))) {
             //处理变量
-            visit(ctx.ident());
             if (layer == 0) {
                 for (int i = 0; i < symbolsstack.size(); i++) {
                     if (!symbolsstack.get(i).isconst) {
@@ -871,35 +1001,24 @@ public class Visitor extends lab7BaseVisitor<Void> {
                         System.exit(1);
                     }
                 }
-            } else {
-                int flag1 = 0;
-                for (Symbol symbol : symbolsstack) {
-                    if (symbol.old_name.equals(this.nowidentName)) {
-                        this.nowIRName = symbol.new_name;
-                        flag1 = 1;
-                    }
-                }
-                if (flag1 == 0) {
-                    System.out.println("字符表中不存在字符" + this.nowidentName);
-                    ir_code.add("字符表中不存在字符" + this.nowidentName + "\n");
-                    System.exit(1);
-                }
+            }
+            if (tmp_symbol.type.equals("func_var")){
+                no_load=1;
             }
         } else {
             //处理数组
-            visit(ctx.ident());
             if (ctx.children.size() == 4) {
                 //处理一维数组
                 Symbol symbol1 = new Symbol();
-                int flag1 = 0, tmp_array1 = 0;
+                int flag2 = 0, tmp_array1 = 0;
                 for (Symbol symbol : symbolsstack) {
                     if (symbol.old_name.equals(this.nowidentName)) {
                         this.nowIRName = symbol.new_name;
                         symbol1 = symbol;
-                        flag1 = 1;
+                        flag2 = 1;
                     }
                 }
-                if (flag1 == 0) {
+                if (flag2 == 0) {
                     System.out.println("字符表中不存在字符" + this.nowidentName);
                     ir_code.add("字符表中不存在字符" + this.nowidentName + "\n");
                     System.exit(1);
@@ -909,39 +1028,51 @@ public class Visitor extends lab7BaseVisitor<Void> {
                     System.exit(1);
                 }
                 visit(ctx.exp(0));
-                ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array1 + " x i32], [" + symbol1.array1 + " x i32]* " + symbol1.new_name + ", i32 0, i32 %x" + (index - 1) + "\n");
+                if (symbol1.type.equals("func_one_array")){
+                    //    %7 = getelementptr i32, i32* %5, i32 %6
+                    ir_code.add("    %x"+index+" = getelementptr i32, i32* "+symbol1.new_name+", i32 "+this.nowIRName+"\n");
+                }else {
+                    ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array1 + " x i32], [" + symbol1.array1 + " x i32]* " + symbol1.new_name + ", i32 0, i32 %x" + (index - 1) + "\n");
+                }
                 index++;
                 this.nowIRName = "%x" + (index - 1);
+
             } else if (ctx.children.size() == 7) {
                 //处理二维数组
                 Symbol symbol1 = new Symbol();
-                int flag1 = 0, tmp_array1 = 0, tmp_array2 = 0;
+                int flag2 = 0, tmp_array1 = 0, tmp_array2 = 0;
                 for (Symbol symbol : symbolsstack) {
                     if (symbol.old_name.equals(this.nowidentName)) {
                         this.nowIRName = symbol.new_name;
                         symbol1 = symbol;
-                        flag1 = 1;
+                        flag2 = 1;
                     }
                 }
-                if (flag1 == 0) {
+                if (flag2 == 0) {
                     System.out.println("字符表中不存在字符" + this.nowidentName);
                     ir_code.add("字符表中不存在字符" + this.nowidentName + "\n");
                     System.exit(1);
                 }
-                if (symbol1.array2 == 0) {
-                    System.out.println(symbol1.old_name + "为一维数组");
-                    System.exit(1);
-                }
+//                if (symbol1.array2 == 0) {
+//                    System.out.println(symbol1.old_name + "为一维数组");
+//                    System.exit(1);
+//                }
+                //%1 = getelementptr [5 x [4 x i32]], [5 x [4 x i32]]* @a, i32 0, i32 2, i32 3
                 visit(ctx.exp(0));
                 tmp_array1 = index - 1;
                 visit(ctx.exp(1));
                 tmp_array2 = index - 1;
-                //%1 = getelementptr [5 x [4 x i32]], [5 x [4 x i32]]* @a, i32 0, i32 2, i32 3
-                ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array1 + " x [" + symbol1.array2 + " x i32]], [" + symbol1.array1 + " x [" + symbol1.array2 + " x i32]]* " + symbol1.new_name + ", i32 0, i32 %x" + tmp_array1 + ", i32 %x" + tmp_array2 + "\n");
-                index++;
-                this.nowIRName = "%x" + (index - 1);
-            }
+                if (symbol1.type.equals("func_two_array")){
+                    ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array_long_for_two + " x i32], [" + symbol1.array_long_for_two + " x i32]* " + symbol1.new_name + ", i32 %x" + tmp_array1 + ", i32 %x" + tmp_array2 + "\n");
+                    index++;
+                    this.nowIRName = "%x" + (index - 1);
+                }else {
 
+                    ir_code.add("    %x" + index + " = getelementptr [" + symbol1.array1 + " x [" + symbol1.array2 + " x i32]], [" + symbol1.array1 + " x [" + symbol1.array2 + " x i32]]* " + symbol1.new_name + ", i32 0, i32 %x" + tmp_array1 + ", i32 %x" + tmp_array2 + "\n");
+                    index++;
+                    this.nowIRName = "%x" + (index - 1);
+                }
+            }
         }
 
 
@@ -954,7 +1085,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
             visit(ctx.mulExp());
         } else if (ctx.children.size() == 3)// addExp ('+' | '-') mulExp
         {
-            if (layer == 0) {
+            if (layer == 0||no_add==1) {
                 int lhs1 = 0, rhs1 = 0, result1 = 0;
                 visit(ctx.addExp());
                 lhs1 = this.nownumber;
@@ -1020,6 +1151,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
             visit(ctx.ident());
             //返回函数名
             String fun_name = this.nowidentName;
+            func_param_add.clear();
             if (fun_name.equals("getint")) {
                 if (fun_decl[0] == 0) {
                     ir_code.add(0, "declare i32 @getint()\n");
@@ -1029,6 +1161,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 index++;
                 this.nowIRName = "%x" + (index - 1);
             } else if (fun_name.equals("putint")) {
+                func_param_add.add(1);
                 visit(ctx.funcRParams());
                 if (fun_decl[1] == 0) {
                     ir_code.add(0, "declare void @putint(i32)\n");
@@ -1044,6 +1177,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 index++;
                 this.nowIRName = "%x" + (index - 1);
             } else if (fun_name.equals("putch")) {
+                func_param_add.add(1);
                 visit(ctx.funcRParams());
                 if (fun_decl[3] == 0) {
                     ir_code.add(0, "declare void @putch(i32)\n");
@@ -1051,21 +1185,88 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 }
                 ir_code.add("    call void @putch(i32 " + this.nowIRName + ")\n");
             } else if (fun_name.equals("getarray")) {
+                func_param_add.add(2);
                 visit(ctx.funcRParams());
                 if (fun_decl[4] == 0) {
-                    ir_code.add(0, "declare i32 @getarray(i32*)");
+                    ir_code.add(0, "declare i32 @getarray(i32*)\n");
                     fun_decl[4] = 1;
                 }
-                //getarray函数尚未完成
-
+                //%13 = call i32 @getarray(i32* %12)
+                ir_code.add("    %x" + index + " = call i32 @getarray(i32* "+this.nowIRName+")\n");
+                index++;
+                this.nowIRName = "%x" + (index - 1);
             } else if (fun_name.equals("putarray")) {
+                func_param_add.add(1);
+                func_param_add.add(2);
                 visit(ctx.funcRParams());
-                if (fun_decl[4] == 0) {
-                    ir_code.add("declare void @putarray(i32,i32*)");
-                    fun_decl[4] = 1;
+                if (fun_decl[5] == 0) {
+                    ir_code.add(0,"declare void @putarray(i32,i32*)\n");
+                    fun_decl[5] = 1;
                 }
                 //putarr函数尚未完成
+                ir_code.add("    call void @putarray(i32 "+func_param.get(0)+", i32* "+func_param.get(1)+")\n");
 
+            }else {
+                int flag2=0;
+                for (Symbol symbol : symbolsstack) {
+                    if (fun_name.equals(symbol.old_name)) {
+                        for (int i = 0; i < symbol.params.size(); i++) {
+                            func_param_add.add(symbol.params.get(i).type+1);
+                            System.out.println(symbol.params.get(i).type);
+                        }
+                        System.out.println(symbol.old_name+"  "+symbol.type);
+                        flag2=1;
+                        if (symbol.type.equals("i32_func")&&symbol.params.size()==0){
+                            //有返回值但无参数
+                            //    %2 = call i32 @func1()
+                            ir_code.add("    %x"+index+" = call i32 "+symbol.new_name+"()\n");
+                            this.nowIRName="%x"+index;
+                            index++;
+                        }else if (symbol.type.equals("i32_func")){
+                            //有返回值有参数
+                            visit(ctx.funcRParams());
+                            ir_code.add("    %x"+index+" = call i32 "+symbol.new_name+"(");
+                            this.nowIRName="%x"+index;
+                            index++;
+                            if (symbol.params.size()!=func_param.size()){
+                                System.out.println("函数参数使用出错，该函数为"+symbol.old_name);
+                                System.exit(1);
+                            }
+                            for (int i = 0; i < func_param.size(); i++) {
+                                ir_code.add(symbol.params.get(i).paramtype+" "+func_param.get(i));
+                                if (i!=func_param.size()-1){
+                                    ir_code.add(",");
+                                }
+                            }
+                            ir_code.add(")\n");
+                        }else if (symbol.type.equals("void_func")){
+                            //无返回值但有参数
+                            visit(ctx.funcRParams());
+                            ir_code.add("    call void "+symbol.new_name+"(");
+                            System.out.println(symbol.params.size()+"  "+func_param.size());
+                            if (symbol.params.size()!=func_param.size()){
+                                System.out.println("函数参数使用出错，该函数为"+symbol.old_name);
+                                System.exit(1);
+                            }
+                            for (int i = 0; i < func_param.size(); i++) {
+                                ir_code.add(symbol.params.get(i).paramtype+" "+func_param.get(i));
+                                if (i!=func_param.size()-1){
+                                    ir_code.add(",");
+                                }
+                            }
+                            ir_code.add(")\n");
+                        }else{
+                            //无返回值无参数
+                            ir_code.add("   call i32 "+symbol.new_name+"()\n");
+                            this.nowIRName="%x"+index;
+                            index++;
+                        }
+                    }
+                }
+                if (flag2==0){
+                    System.out.println("不能调用现在尚未声明的函数");
+                    System.exit(1);
+                }
             }
         } else {
 //            ir_code.add("unaryexp error");
@@ -1075,6 +1276,18 @@ public class Visitor extends lab7BaseVisitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitFuncRParams(lab7Parser.FuncRParamsContext ctx) {
+        func_param.clear();
+        for (int i = 0; i < ctx.children.size()/2+1; i++) {
+            for_array_addr=func_param_add.get(i);
+            visit(ctx.exp(i));
+            String tmp=this.nowIRName;
+            func_param.add(tmp);
+        }
+        for_array_addr=0;
+        return null;
+    }
 
     @Override
     public Void visitPrimaryExp(lab7Parser.PrimaryExpContext ctx) {
@@ -1100,7 +1313,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                         this.nownumber = this.nownumber * 10 + strnum.charAt(i) - '0';
                     }
                 }
-                if (layer != 0) {
+                if (layer != 0&&no_add!=1) {
 //                    System.out.println("    %" + (index++) + "= add i32 0," + this.nownumber);
                     ir_code.add("    %x" + (index++) + "= add i32 0," + this.nownumber + "\n");
                     this.nowIRName = "%x" + (index - 1);
@@ -1110,12 +1323,12 @@ public class Visitor extends lab7BaseVisitor<Void> {
             } else {
                 visit(ctx.lVal());
 //                System.out.println("    %" + (index++) + " = load i32, i32* " + this.nowIRName);
-                if (layer != 0) {
+                if (layer != 0&&no_load ==0) {
                     ir_code.add("    %x" + (index++) + " = load i32, i32* " + this.nowIRName + "\n");
                     this.nowIRName = "%x" + (index - 1);
                     this.nowType = "i32";
                 }
-
+                no_load=0;
             }
         } else if (ctx.children.size() == 3) {
             visit(ctx.exp());
