@@ -810,6 +810,8 @@ public class Visitor extends lab8BaseVisitor<Void> {
         } else if (ctx.children.size() >= 5) {
 //            System.out.println(ctx.children.get(0).getText());
             if (ctx.children.get(0).getText().equals("if")) {
+                int ifstart=0,ifend=0;
+                ifstart=ir_code.size()-1;
                 if_alone = 0;
                 int cond = 0, label1 = 0, label2 = 0, label3 = 0;
                 this.nowType = "";
@@ -843,6 +845,14 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     ir_code.add("\nx" + label3 + ":\n");
                 }
                 this.nowIRName = "%x" + (index - 1);
+                ifend=ir_code.size()-1;
+                for (int i = ifstart; i <= ifend; i++) {
+                    if (ir_code.get(i).equals("start")) {
+                        ir_code.set(i, "" + label1);
+                    } else if (ir_code.get(i).equals("end")) {
+                        ir_code.set(i, "" + label2);
+                    }
+                }
             } else if (ctx.children.get(0).getText().equals("while")) {
                 System.out.println("use while");
                 int cond = 0, label1 = 0, label2 = 0, start = 0, whilestart = 0, whileend = 0;
@@ -943,13 +953,18 @@ public class Visitor extends lab8BaseVisitor<Void> {
             String left = "", right = "";
             visit(ctx.lAndExp());
             left = this.nowIRName;
+            ir_code.add("    br i1 "+left+" label %x");
+            ir_code.add((index+1)+",label %x");
+            ir_code.add("end");index++;
+            ir_code.add("\nx"+index+":\n");index++;
+
             if_alone=0;
             visit(ctx.eqExp());
             right = this.nowIRName;
-            ir_code.add("    %x" + (index) + "= and i1 " + left + "," + right + ";\n");
-            index++;
-            this.nowIRName = "%x" + (index - 1);
-            this.nowType = "i1";
+//            ir_code.add("    %x" + (index) + "= and i1 " + left + "," + right + ";\n");
+//            index++;
+//            this.nowIRName = "%x" + (index - 1);
+//            this.nowType = "i1";
         } else {
             System.out.println("landexp error");
             System.exit(1);
@@ -967,13 +982,20 @@ public class Visitor extends lab8BaseVisitor<Void> {
             String left = "", right = "";
             visit(ctx.lOrExp());
             left = this.nowIRName;
+            // br i1 %res_a label block_b, label %block_out
+            ir_code.add("    br i1 "+left+" label %x");
+            ir_code.add("start");
+            ir_code.add(", label %x"+(index+1)+"\n");index++;
+            ir_code.add("x"+index+":\n");index++;
+
             if_alone = 0;
             visit(ctx.lAndExp());
             right = this.nowIRName;
-            ir_code.add("    %x" + (index) + "= or i1 " + left + "," + right + ";\n");
-            index++;
-            this.nowIRName = "%x" + (index - 1);
-            this.nowType = "i1";
+
+//            ir_code.add("    %x" + (index) + "= or i1 " + left + "," + right + ";\n");
+//            index++;
+//            this.nowIRName = "%x" + (index - 1);
+//            this.nowType = "i1";
         } else {
             System.out.println("lorexp error");
             System.exit(1);
