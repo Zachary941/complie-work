@@ -953,7 +953,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
             String left = "", right = "";
             visit(ctx.lAndExp());
             left = this.nowIRName;
-            ir_code.add("    br i1 "+left+" label %x");
+            ir_code.add("    br i1 "+left+",label %x");
             ir_code.add((index+1)+",label %x");
             ir_code.add("end");index++;
             ir_code.add("\nx"+index+":\n");index++;
@@ -983,7 +983,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
             visit(ctx.lOrExp());
             left = this.nowIRName;
             // br i1 %res_a label block_b, label %block_out
-            ir_code.add("    br i1 "+left+" label %x");
+            ir_code.add("    br i1 "+left+",label %x");
             ir_code.add("start");
             ir_code.add(", label %x"+(index+1)+"\n");index++;
             ir_code.add("x"+index+":\n");index++;
