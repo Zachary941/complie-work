@@ -46,8 +46,9 @@ lAndExp      : eqExp
 lOrExp       : lAndExp
                 | lOrExp '||' lAndExp;
 number             : Decimal_const | Octal_const | Hexadecimal_const;
-ident              :Nondigit(Nondigit|Decimal_const
-                    |Octal_const|Hexadecimal_const|'int'|'if')*;
+ident              :((Nondigit)(Nondigit|Decimal_const
+                                        |Octal_const|Hexadecimal_const|'int'|'if')*)
+                                        |('int'|'if')((Nondigit|Decimal_const|Octal_const|Hexadecimal_const|'int'|'if')+);
 
 Nondigit           : [a-zA-Z_];
 
