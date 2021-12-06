@@ -935,6 +935,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     @Override
     public Void visitLAndExp(lab7Parser.LAndExpContext ctx) {
         if (ctx.children.size() == 1) {
+            if_alone=0;
             visit(ctx.eqExp());
         } else if (ctx.children.size() == 3) {
             if_alone = 1;
@@ -1310,7 +1311,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                             ir_code.add(")\n");
                         }else{
                             //无返回值无参数
-                            ir_code.add("   call i32 "+symbol.new_name+"()\n");
+                            ir_code.add("    call void "+symbol.new_name+"()\n");
                             this.nowIRName="%x"+index;
                             index++;
                         }
