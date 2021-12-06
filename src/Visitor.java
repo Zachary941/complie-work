@@ -978,6 +978,8 @@ public class Visitor extends lab8BaseVisitor<Void> {
             if_alone = 0;
             visit(ctx.lAndExp());
         } else if (ctx.children.size() == 3) {
+            int orstart=0,orend=0;
+            orstart=ir_code.size()-1;
             if_alone = 1;
             String left = "", right = "";
             visit(ctx.lOrExp());
@@ -987,7 +989,12 @@ public class Visitor extends lab8BaseVisitor<Void> {
             ir_code.add("start");
             ir_code.add(", label %x"+(index+1)+"\n");index++;
             ir_code.add("x"+index+":\n");index++;
-
+            orend=ir_code.size()-1;
+            for (int i = orstart; i <=orend ; i++) {
+                if (ir_code.get(i).equals("end")) {
+                    ir_code.set(i, "" + (index-1));
+                }
+            }
             if_alone = 0;
             visit(ctx.lAndExp());
             right = this.nowIRName;
