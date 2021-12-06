@@ -1,11 +1,10 @@
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.PrintStream;
 import java.util.Scanner;
 
 /*
@@ -14,7 +13,7 @@ import java.util.Scanner;
 */
 public class lab7_1 {
     public static void main(String[] args) throws FileNotFoundException {
-        // String inputName = "D:\\学习\\2021大三上学期\\编译原理\\编译原理实验\\lab7\\src\\input.txt";
+        // String inputName = "D:\\学习\\2021大三上学期\\编译原理\\编译原理实验\\lab8\\src\\input.txt";
         // String outputName = "./output.txt";
        String inputName=args[0];
 
@@ -45,17 +44,13 @@ public class lab7_1 {
                 i++;
                 i++;
             }
-            if (input2.charAt(i) == ' ' || input2.charAt(i) == '\n' || input2.charAt(i) == '\t') {
-                continue;
-            }
             input1 += input2.charAt(i) + "";
 
         }
-        System.out.println(input1);
         CharStream inputStream = CharStreams.fromString(input1.toString());
-        lab7Lexer lexer = new lab7Lexer(inputStream);
+        lab8Lexer lexer = new lab8Lexer(inputStream);
         CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-        lab7Parser parser = new lab7Parser(tokenStream);
+        lab8Parser parser = new lab8Parser(tokenStream);
         ParseTree tree = parser.compUnit();
         Visitor visitor = new Visitor();
         visitor.visit(tree);

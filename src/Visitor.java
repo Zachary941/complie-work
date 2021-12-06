@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-public class Visitor extends lab7BaseVisitor<Void> {
+public class Visitor extends lab8BaseVisitor<Void> {
     int index = 1;
     public static ArrayList<Symbol> symbolsstack = new ArrayList<>();
     int nownumber = 0;
@@ -37,15 +37,15 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitConstDecl(lab7Parser.ConstDeclContext ctx) {
+    public Void visitConstDecl(lab8Parser.ConstDeclContext ctx) {
         return super.visitConstDecl(ctx);
     }
 
     @Override
-    public Void visitConstDef(lab7Parser.ConstDefContext ctx) {
+    public Void visitConstDef(lab8Parser.ConstDefContext ctx) {
         if (ctx.children.size() <= 3) {
             if (layer == 0) {
-                visit(ctx.ident());
+                this.nowidentName=ctx.Ident().getText();
                 if (ctx.children.size() == 3) {
                     is_def_in_symbolsstack();
                     visit(ctx.constInitVal());
@@ -61,7 +61,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 ir_code.add("    %x" + (index++) + " = alloca i32\n");
                 this.nowIRName = "%x" + (index - 1);
 //            System.out.println("    %" + (index++) + " = alloca i32");
-                visit(ctx.ident());
+                this.nowidentName=ctx.Ident().getText();
                 is_def_in_symbolsstack();
                 Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
                 symbol.num = this.nownumber;
@@ -76,7 +76,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
             num_of_initval = 0;
             array1 = 0;
             array2 = 0;
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
             String name = this.nowidentName;
             if (layer == 0) {
                 if (ctx.children.size() == 6) {
@@ -168,7 +168,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitConstInitVal(lab7Parser.ConstInitValContext ctx) {
+    public Void visitConstInitVal(lab8Parser.ConstInitValContext ctx) {
         if (ctx.children.size() == 1) {
             visit(ctx.constExp());
         } else if (ctx.children.size() >= 3) {
@@ -276,11 +276,11 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitVarDef(lab7Parser.VarDefContext ctx) {
+    public Void visitVarDef(lab8Parser.VarDefContext ctx) {
         if (ctx.children.size() == 1 || (ctx.children.size() == 3 && !ctx.getChild(2).getText().equals("["))) {
             if (layer == 0) {
                 String var = "";
-                visit(ctx.ident());
+                this.nowidentName=ctx.Ident().getText();
                 var = "@" + this.nowidentName;
                 Symbol symbol = new Symbol(nowidentName, "@" + nowidentName, layer);
                 if (ctx.children.size() == 3) {
@@ -303,12 +303,12 @@ public class Visitor extends lab7BaseVisitor<Void> {
                 this.nowIRName = "%x" + (index - 1);
 //            System.out.println("    %" + (index++) + " = alloca i32");
                 if (ctx.children.size() == 1) {
-                    visit(ctx.ident());
+                    this.nowidentName=ctx.Ident().getText();
                     is_def_in_symbolsstack();
                     Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
                     symbolsstack.add(symbol);
                 } else if (ctx.children.size() == 3) {
-                    visit(ctx.ident());
+                    this.nowidentName=ctx.Ident().getText();
                     is_def_in_symbolsstack();
                     Symbol symbol = new Symbol(nowidentName, "%x" + (index - 1), layer);
                     symbolsstack.add(symbol);
@@ -325,7 +325,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
             num_of_initval = 0;
             array1 = 0;
             array2 = 0;
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
             String name = this.nowidentName;
             if (layer == 0) {
                 if (ctx.children.size() == 4) {
@@ -494,7 +494,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitInitVal(lab7Parser.InitValContext ctx) {
+    public Void visitInitVal(lab8Parser.InitValContext ctx) {
         if (ctx.children.size() == 1) {
             visit(ctx.exp());
         }else if (ctx.children.size()==2&&layer==0){
@@ -605,7 +605,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFuncDef(lab7Parser.FuncDefContext ctx) {
+    public Void visitFuncDef(lab8Parser.FuncDefContext ctx) {
         layer=0;
         if (ctx.children.size() == 5) {
             String functype="";
@@ -614,7 +614,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
             }else if (ctx.funcType().getText().equals("int")){
                 functype="i32";
             }
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
             ir_code.add("define dso_local "+functype+" @"+this.nowidentName+"()\n");
             Symbol symbol=new Symbol(this.nowidentName,"@"+this.nowidentName,layer);
             symbol.type=functype+"_func";
@@ -637,7 +637,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
             }else if (ctx.funcType().getText().equals("int")){
                 functype="i32";
             }
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
             ir_code.add("define dso_local "+functype+" @"+this.nowidentName+"(");
 
             Symbol symbol=new Symbol(this.nowidentName,"@"+this.nowidentName,layer);
@@ -693,7 +693,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFuncFParams(lab7Parser.FuncFParamsContext ctx) {
+    public Void visitFuncFParams(lab8Parser.FuncFParamsContext ctx) {
         for (int i = 0; i < ctx.children.size()/2+1; i++) {
             visit(ctx.funcFParam(i));
             if (i!=ctx.children.size()/2){
@@ -704,23 +704,24 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFuncFParam(lab7Parser.FuncFParamContext ctx) {
+    public Void visitFuncFParam(lab8Parser.FuncFParamContext ctx) {
         if (ctx.children.size()==2){
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
+            
             ir_code.add("i32 %x"+index);
             //将参数放入函数的symbol里去
             Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"i32",0);
             func_symbol.params.add(funcfparam);
             index++;
         }else if (ctx.children.size()==4){
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
             ir_code.add("i32* %x"+index);
             Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"i32*",1);
             func_symbol.params.add(funcfparam);
             index++;
 
         }else if (ctx.children.size()>=6){
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
             no_add=1;
             visit(ctx.exp(0));
             no_add=0;
@@ -733,7 +734,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitBlock(lab7Parser.BlockContext ctx) {
+    public Void visitBlock(lab8Parser.BlockContext ctx) {
 //        System.out.println("{");
 
         if (ctx.children.size() >= 2) {
@@ -758,12 +759,12 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitBlockItem(lab7Parser.BlockItemContext ctx) {
+    public Void visitBlockItem(lab8Parser.BlockItemContext ctx) {
         return super.visitBlockItem(ctx);
     }
 
     @Override
-    public Void visitStmt(lab7Parser.StmtContext ctx) {
+    public Void visitStmt(lab8Parser.StmtContext ctx) {
         if (ctx.children.size() == 4) {
             //stmt         : lVal '=' exp ';'
             String lval, exp;
@@ -874,7 +875,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitRelExp(lab7Parser.RelExpContext ctx) {
+    public Void visitRelExp(lab8Parser.RelExpContext ctx) {
         if (ctx.children.size() == 1) {
             visit(ctx.addExp());
             if (if_alone == 0) {
@@ -908,7 +909,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitEqExp(lab7Parser.EqExpContext ctx) {
+    public Void visitEqExp(lab8Parser.EqExpContext ctx) {
         if (ctx.children.size() == 1) {
             visit(ctx.relExp());
         } else if (ctx.children.size() == 3) {
@@ -933,7 +934,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitLAndExp(lab7Parser.LAndExpContext ctx) {
+    public Void visitLAndExp(lab8Parser.LAndExpContext ctx) {
         if (ctx.children.size() == 1) {
             if_alone=0;
             visit(ctx.eqExp());
@@ -957,7 +958,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitLOrExp(lab7Parser.LOrExpContext ctx) {
+    public Void visitLOrExp(lab8Parser.LOrExpContext ctx) {
         if (ctx.children.size() == 1) {
             if_alone = 0;
             visit(ctx.lAndExp());
@@ -981,8 +982,8 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitLVal(lab7Parser.LValContext ctx) {
-        visit(ctx.ident());
+    public Void visitLVal(lab8Parser.LValContext ctx) {
+        this.nowidentName=ctx.Ident().getText();
         int flag1 = 0;
         Symbol tmp_symbol=new Symbol();
         for (Symbol symbol : symbolsstack) {
@@ -1109,7 +1110,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitAddExp(lab7Parser.AddExpContext ctx) {
+    public Void visitAddExp(lab8Parser.AddExpContext ctx) {
         if (ctx.children.size() == 1) {// addexp->mulexp
             visit(ctx.mulExp());
         } else if (ctx.children.size() == 3)// addExp ('+' | '-') mulExp
@@ -1153,7 +1154,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitUnaryExp(lab7Parser.UnaryExpContext ctx) {
+    public Void visitUnaryExp(lab8Parser.UnaryExpContext ctx) {
         if (ctx.children.size() == 1) {
             visit(ctx.primaryExp());
         } else if (ctx.children.size() == 2) {
@@ -1178,7 +1179,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
 
         } else if (ctx.children.size() >= 3) {
             ku=0;
-            visit(ctx.ident());
+            this.nowidentName=ctx.Ident().getText();
             //返回函数名
             String fun_name = this.nowidentName;
 //            func_param_add.clear();
@@ -1293,7 +1294,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
                             index++;
                             for (int i = 0; i < symbol.params.size(); i++) {
                                 ir_code.add(symbol.params.get(i).paramtype+" "+func_param.get(pos_param+i));
-                                if (i!=func_param.size()-1){
+                                if (i!=symbol.params.size()-1){
                                     ir_code.add(",");
                                 }
                             }
@@ -1338,7 +1339,7 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFuncRParams(lab7Parser.FuncRParamsContext ctx) {
+    public Void visitFuncRParams(lab8Parser.FuncRParamsContext ctx) {
 //        func_param.clear();
         if (ku!=1&&func_symbol!=null&&func_symbol.params.size()!=ctx.children.size()/2+1){
             System.out.println("函数参数使用出错h，该函数为"+func_symbol.old_name+"其需要参数为"+func_symbol.params.size()+"其获得参数为"+ctx.children.size()/2+1);
@@ -1355,11 +1356,11 @@ public class Visitor extends lab7BaseVisitor<Void> {
     }
 
     @Override
-    public Void visitPrimaryExp(lab7Parser.PrimaryExpContext ctx) {
+    public Void visitPrimaryExp(lab8Parser.PrimaryExpContext ctx) {
         if (ctx.children.size() == 1) {
-            if (ctx.number() != null) {
+            if (ctx.Number() != null) {
                 this.nownumber = 0;
-                String strnum = ctx.number().getText();
+                String strnum = ctx.Number().getText();
 //                System.out.println(strnum);
                 if (strnum.startsWith("0x") || strnum.startsWith("0X")) {
                     for (int i = 2; i < strnum.length(); i++) {
@@ -1410,14 +1411,9 @@ public class Visitor extends lab7BaseVisitor<Void> {
         return null;
     }
 
-    @Override
-    public Void visitNumber(lab7Parser.NumberContext ctx) {
-
-        return null;
-    }
 
     @Override
-    public Void visitMulExp(lab7Parser.MulExpContext ctx) {
+    public Void visitMulExp(lab8Parser.MulExpContext ctx) {
         if (ctx.children.size() == 1) {
             visit(ctx.unaryExp());
         } else if (ctx.children.size() == 3) {
@@ -1469,15 +1465,6 @@ public class Visitor extends lab7BaseVisitor<Void> {
             System.exit(1);
         }
         return null;
-    }
-
-    @Override
-    public Void visitIdent(lab7Parser.IdentContext ctx) {
-        this.nowidentName = "";
-        for (int i = 0; i < ctx.getChildCount(); i++) {
-            this.nowidentName = this.nowidentName + ctx.getChild(i).getText();
-        }
-        return super.visitIdent(ctx);
     }
 }
 
