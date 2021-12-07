@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Visitor extends lab8BaseVisitor<Void> {
     int index = 1;
@@ -29,6 +31,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
     String now_in_func="";
     //宏观定义和当前变量定义
     ArrayList<Inline> neilian_stack=new ArrayList<>();
+    int diaoyongnum=0;
     public void is_def_in_symbolsstack() {
         for (Symbol symbol : symbolsstack) {
             if (this.nowidentName.equals(symbol.old_name) && (symbol.layer == this.layer)) {
@@ -41,12 +44,20 @@ public class Visitor extends lab8BaseVisitor<Void> {
 
     @Override
     public Void visitCompUnit(lab8Parser.CompUnitContext ctx) {
+        out_code.add(0,"@hhhh = dso_local global i32 0\n");
         ir_code.add(0, "declare i32 @getint()\n");
         ir_code.add(0, "declare void @putint(i32)\n");
         ir_code.add(0, "declare i32 @getch()\n");
         ir_code.add(0, "declare void @putch(i32)\n");
         ir_code.add(0, "declare i32 @getarray(i32*)\n");
         ir_code.add(0,"declare void @putarray(i32,i32*)\n");
+        out_code.add(0, "declare i32 @getint()\n");
+        out_code.add(0, "declare void @putint(i32)\n");
+        out_code.add(0, "declare i32 @getch()\n");
+        out_code.add(0, "declare void @putch(i32)\n");
+        out_code.add(0, "declare i32 @getarray(i32*)\n");
+        out_code.add(0,"declare void @putarray(i32,i32*)\n");
+
         return super.visitCompUnit(ctx);
     }
 
@@ -64,6 +75,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     is_def_in_symbolsstack();
                     visit(ctx.constInitVal());
                     ir_code.add("@" + this.nowidentName + " = dso_local global i32 " + this.nownumber + "\n");
+                    out_code.add("@" + this.nowidentName + " = dso_local global i32 " + this.nownumber + "\n");
 //                System.out.println("@" + this.nowidentName + " = dso_local global i32 " + this.nownumber);
                     Symbol symbol = new Symbol(nowidentName, "@" + nowidentName, layer);
                     symbol.num = this.nownumber;
@@ -114,6 +126,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     array2 = this.nownumber;
                     //@c = dso_local constant [2 x [1 x i32]] [[1 x i32] [i32 1], [1 x i32] [i32 3]]
                     ir_code.add("@" + name + " = dso_local constant [" + array1 + " x [" + array2 + " x i32]] ");
+                    out_code.add("@" + name + " = dso_local constant [" + array1 + " x [" + array2 + " x i32]] ");
                     visit(ctx.constInitVal());
                     ir_code.add("\n");
                     //入栈
@@ -301,10 +314,12 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     is_def_in_symbolsstack();
                     visit(ctx.initVal());
                     ir_code.add(var + " = dso_local global i32 " + this.nownumber + "\n");
+                    out_code.add(var + " = dso_local global i32 " + this.nownumber + "\n");
 //                System.out.println("@" + this.nowidentName + " = dso_local global i32 " + this.nownumber);
                 } else {
                     is_def_in_symbolsstack();
                     ir_code.add(var + " = dso_local global i32 " + 0 + "\n");
+                    out_code.add(var + " = dso_local global i32 " + 0 + "\n");
                 }
                 symbolsstack.add(symbol);
 //            for (int i = 0; i < symbolsstack.size(); i++) {
@@ -347,6 +362,8 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     array1 = this.nownumber;
                     ir_code.add("@" + name + " = dso_local global [" + array1 + " x i32] zeroinitializer");
                     ir_code.add("\n");
+                    out_code.add("@" + name + " = dso_local global [" + array1 + " x i32] zeroinitializer");
+                    out_code.add("\n");
                     //入栈
                     Symbol symbol = new Symbol(name, "@" + name, layer);
                     symbol.type = "one_array";
@@ -361,6 +378,8 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     //@c = dso_local constant [2 x [1 x i32]] [[1 x i32] [i32 1], [1 x i32] [i32 3]]
                     ir_code.add("@" + name + " = dso_local global [" + array1 + " x [" + array2 + " x i32]] zeroinitializer");
                     ir_code.add("\n");
+                    out_code.add("@" + name + " = dso_local global [" + array1 + " x [" + array2 + " x i32]] zeroinitializer");
+                    out_code.add("\n");
                     //入栈
                     Symbol symbol = new Symbol(name, "@" + name, layer);
                     symbol.type = "two_array";
@@ -378,6 +397,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                         System.exit(1);
                     }
                     ir_code.add("@" + name + " = dso_local global [" + array1 + " x i32] ");
+                    out_code.add("@" + name + " = dso_local global [" + array1 + " x i32] ");
                     visit(ctx.initVal());
                     ir_code.add("\n");
                     //入栈
@@ -394,6 +414,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     array2 = this.nownumber;
                     //@c = dso_local constant [2 x [1 x i32]] [[1 x i32] [i32 1], [1 x i32] [i32 3]]
                     ir_code.add("@" + name + " = dso_local global [" + array1 + " x [" + array2 + " x i32]] ");
+                    out_code.add("@" + name + " = dso_local global [" + array1 + " x [" + array2 + " x i32]] ");
                     visit(ctx.initVal());
                     ir_code.add("\n");
                     //入栈
@@ -736,6 +757,9 @@ public class Visitor extends lab8BaseVisitor<Void> {
             if (now_in_func.equals(symbol.old_name)) {
                 if (!symbol.is_connect||symbol.old_name.equals("main")){
                     for (int i = func_start; i < ir_code.size(); i++) {
+                        if (i==func_start&&ir_code.get(i).equals("}\n")){
+                            continue;
+                        }
                         out_code.add(ir_code.get(i));
                     }
                 }
@@ -859,6 +883,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
         } else if (ctx.children.size() == 3) {
             visit(ctx.exp());
 //            System.out.println("    ret i32 " + this.nowIRName);
+            ir_code.add("    store i32 "+this.nowIRName+", i32* @hhhh\n");
             ir_code.add("    ret i32 " + this.nowIRName + "\n");
         } else if (ctx.children.size() >= 5) {
 //            System.out.println(ctx.children.get(0).getText());
@@ -881,23 +906,23 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 label2 = index + 1;
                 index += 2;
 //                System.out.println("    br i1 %7,label %8, label %10");
-                ir_code.add("    br i1 %x" + cond + ",label %x" + label1 + ", label %x" + label2);
+                ir_code.add("    br i1 %x" + cond + ",label %b" + label1 + ", label %b" + label2);
                 if (ctx.children.size() == 5) {
-                    ir_code.add("\nx" + label1 + ":\n");
+                    ir_code.add("\nb" + label1 + ":\n");
                     visit(ctx.stmt(0));
-                    ir_code.add("    br label %x" + label2 + "\n");
-                    ir_code.add("\nx" + label2 + ":\n");
+                    ir_code.add("    br label %b" + label2 + "\n");
+                    ir_code.add("\nb" + label2 + ":\n");
                 } else {
                     label3 = index++;
-                    ir_code.add("\nx" + label1 + ":\n");
+                    ir_code.add("\nb" + label1 + ":\n");
                     visit(ctx.stmt(0));
-                    ir_code.add("    br label %x" + label3 + "\n");
-                    ir_code.add("\nx" + label2 + ":\n");
+                    ir_code.add("    br label %b" + label3 + "\n");
+                    ir_code.add("\nb" + label2 + ":\n");
                     visit(ctx.stmt(1));
-                    ir_code.add("    br label %x" + (label3) + "\n");
-                    ir_code.add("\nx" + label3 + ":\n");
+                    ir_code.add("    br label %b" + (label3) + "\n");
+                    ir_code.add("\nb" + label3 + ":\n");
                 }
-                this.nowIRName = "%x" + (index - 1);
+                this.nowIRName = "%b" + (index - 1);
                 ifend=ir_code.size()-1;
                 for (int i = ifstart; i <= ifend; i++) {
                     if (ir_code.get(i).equals("start")) {
@@ -910,8 +935,8 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 System.out.println("use while");
                 int cond = 0, label1 = 0, label2 = 0, start = 0, whilestart = 0, whileend = 0;
                 whilestart = ir_code.size() - 1;
-                ir_code.add("    br label %x" + (index) + "\n");
-                ir_code.add("\nx" + index + ":\n");
+                ir_code.add("    br label %b" + (index) + "\n");
+                ir_code.add("\nb" + index + ":\n");
                 start = index;
                 index++;
                 visit(ctx.cond());
@@ -919,17 +944,21 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 label1 = index;
                 label2 = index + 1;
                 index += 2;
-                ir_code.add("    br i1 %x" + cond + ",label %x" + label1 + ", label %x" + label2 + "\n");
-                ir_code.add("\nx" + label1 + ":\n");
+                ir_code.add("    br i1 %x" + cond + ",label %b" + label1 + ", label %b" + label2 + "\n");
+                ir_code.add("\nb" + label1 + ":\n");
                 visit(ctx.stmt(0));
-                ir_code.add("    br label %x" + start + "\n");
-                ir_code.add("\nx" + label2 + ":\n");
+                ir_code.add("    br label %b" + start + "\n");
+                ir_code.add("\nb" + label2 + ":\n");
                 whileend = ir_code.size() - 1;
                 for (int i = whilestart; i <= whileend; i++) {
                     if (ir_code.get(i).equals("break")) {
-                        ir_code.set(i, "    br label %x" + label2 + "\n");
+                        ir_code.set(i, "    br label %b" + label2 + "\n");
                     } else if (ir_code.get(i).equals("continue")) {
-                        ir_code.set(i, "    br label %x" + start + "\n");
+                        ir_code.set(i, "    br label %b" + start + "\n");
+                    }else if (ir_code.get(i).equals("start")) {
+                        ir_code.set(i, "" + label1);
+                    } else if (ir_code.get(i).equals("end")) {
+                        ir_code.set(i, "" + label2);
                     }
                 }
             }
@@ -1006,10 +1035,10 @@ public class Visitor extends lab8BaseVisitor<Void> {
             String left = "", right = "";
             visit(ctx.lAndExp());
             left = this.nowIRName;
-            ir_code.add("    br i1 "+left+",label %x");
-            ir_code.add((index+1)+",label %x");
+            ir_code.add("    br i1 "+left+",label %b");
+            ir_code.add((index+1)+",label %b");
             ir_code.add("end");index++;
-            ir_code.add("\nx"+index+":\n");index++;
+            ir_code.add("\nb"+index+":\n");index++;
 
             if_alone=0;
             visit(ctx.eqExp());
@@ -1038,10 +1067,10 @@ public class Visitor extends lab8BaseVisitor<Void> {
             visit(ctx.lOrExp());
             left = this.nowIRName;
             // br i1 %res_a label block_b, label %block_out
-            ir_code.add("    br i1 "+left+",label %x");
+            ir_code.add("    br i1 "+left+",label %b");
             ir_code.add("start");
-            ir_code.add(", label %x"+(index+1)+"\n");index++;
-            ir_code.add("x"+index+":\n");index++;
+            ir_code.add(", label %b"+(index+1)+"\n");index++;
+            ir_code.add("b"+index+":\n");index++;
             orend=ir_code.size()-1;
             for (int i = orstart; i <=orend ; i++) {
                 if (ir_code.get(i).equals("end")) {
@@ -1261,6 +1290,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
 
         } else if (ctx.children.size() >= 3) {
             ku=0;
+            diaoyongnum++;
             this.nowidentName=ctx.Ident().getText();
             Symbol now_symbol_connect=new Symbol();
             //判断是否能进行内联
@@ -1353,30 +1383,42 @@ public class Visitor extends lab8BaseVisitor<Void> {
                             System.out.println(symbol.params.get(i).type);
                         }
                         flag2=1;
-                        Inline inline1=new Inline();
+                        ArrayList<String> tmpforinline=new ArrayList<>();
                         for (Inline inline : neilian_stack) {
                             if (symbol.old_name.equals(inline.func_name)) {
-                                inline1=inline;
+                                tmpforinline.addAll(inline.context);
                             }
                         }
-
                         if (symbol.type.equals("i32_func")&&symbol.params.size()==0){
                             //有返回值但无参数
                             //    %2 = call i32 @func1()
                             String ret_var="";
                             if (symbol.is_connect){
                                 //内联
-                                for (int i = 0; i < inline1.context.size(); i++) {
-                                    if (inline1.context.get(i).contains("ret")){
-                                        ret_var=inline1.context.get(i).substring(8);
-                                        inline1.context.set(i,"    br label %x"+index+"\n");
+                                int flag=0;
+                                for (int i = 0; i < tmpforinline.size(); i++) {
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("%(a\\d+)?x","%a"+diaoyongnum+"x"));
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("label %b","label %a"+diaoyongnum+"b"));
+                                    Pattern pattern =Pattern.compile("(b\\d+):");
+                                    Matcher matcher = pattern.matcher(tmpforinline.get(i));
+                                    if (matcher.find()){
+                                        tmpforinline.set(i,tmpforinline.get(i).replaceAll("(b\\d+):","a"+diaoyongnum+matcher.group(1)+":"));
+                                    }
+
+                                    if (tmpforinline.get(i).contains("    ret ")){
+//                                        ret_var=tmpforinline.get(i).substring(11);
+                                        tmpforinline.set(i,"    br label %b"+index+"\n");
+                                        flag=1;
                                     }
                                 }
-                                ir_code.addAll(inline1.context);
-//                                System.out.println(inline1.context+"md");
+                                if (flag==0){
+                                    tmpforinline.add("    br label %b"+index+"\n");
+                                    ret_var="0\n";
+                                }
+                                ir_code.addAll(tmpforinline);
 
-                                ir_code.add("\nx"+index+":\n");index++;
-                                ir_code.add("    %x"+index+"= add i32 0,"+ret_var);
+                                ir_code.add("\nb"+index+":\n");index++;
+                                ir_code.add("    %x"+index+"= load i32, i32* @hhhh\n");
                                 this.nowIRName="%x"+index;
                                 index++;
                             }else {
@@ -1384,31 +1426,47 @@ public class Visitor extends lab8BaseVisitor<Void> {
                                 this.nowIRName="%x"+index;
                                 index++;
                             }
-
                         }else if (symbol.type.equals("i32_func")){
                             //有返回值有参数
                             visit(ctx.funcRParams());
                             String ret_var="";
                             if (symbol.is_connect){
+                                //替換參數
+                                int flag=0;
+                                for (int i = 0; i < tmpforinline.size(); i++) {
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("%(a\\d+)?x","%a"+diaoyongnum+"x"));
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("label %b","label %a"+diaoyongnum+"b"));
+                                    Pattern pattern =Pattern.compile("(b\\d+):");
+                                    Matcher matcher = pattern.matcher(tmpforinline.get(i));
+                                    if (matcher.find()){
+                                        tmpforinline.set(i,tmpforinline.get(i).replaceAll("(b\\d+):","a"+diaoyongnum+matcher.group(1)+":"));
+                                    }
+                                    if (tmpforinline.get(i).contains("    ret ")){
+                                        ret_var=tmpforinline.get(i).substring(11);
+                                        tmpforinline.set(i,"    br label %b"+index+"\n");
+                                        flag=1;
+                                    }
+
+                                }
+                                if (flag==0){
+                                    tmpforinline.add("    br label %b"+index+"\n");
+                                    ret_var="0\n";
+                                }
+                                //換參數
                                 for (int i = 0; i < symbol.params.size(); i++) {
-                                    for (int j = 0; j < inline1.context.size(); j++) {
-                                        System.out.println(inline1.context.size()+"  "+symbol.params.size());
-                                        if (inline1.context.get(j).contains(symbol.params.get(i).new_name+",")){
-                                            inline1.context.set(j,inline1.context.get(j).replaceAll(symbol.params.get(i).new_name,func_param.get(pos_param+i)));
+                                    for (int j = 0; j < tmpforinline.size(); j++) {
+//                                        System.out.println("%a"+diaoyongnum+symbol.params.get(i).new_name.substring(1)+","+"we");
+                                        if (tmpforinline.get(j).contains("%a"+diaoyongnum+symbol.params.get(i).new_name.substring(1)+",")){
+                                            tmpforinline.set(j,tmpforinline.get(j).replaceAll("%a"+diaoyongnum+symbol.params.get(i).new_name.substring(1),func_param.get(pos_param+i)));
                                         }
                                     }
                                 }
-                                for (int i = 0; i < inline1.context.size(); i++) {
-                                    if (inline1.context.get(i).contains("ret")){
-                                        ret_var=inline1.context.get(i).substring(8);
-                                        inline1.context.set(i,"    br label %x"+index+"\n");
-                                    }
-                                }
-                                ir_code.addAll(inline1.context);
-//                                System.out.println(inline1.context+"md");
+                                ir_code.addAll(tmpforinline);
+//                                System.out.println(tmpforinline+"md");
 
-                                ir_code.add("\nx"+index+":\n");index++;
-                                ir_code.add("    %x"+index+"= add i32 0,"+ret_var);
+                                ir_code.add("\nb"+index+":\n");index++;
+//                                ir_code.add("    %x"+index+"= add i32 0,"+ret_var);
+                                ir_code.add("    %x"+index+"= load i32, i32* @hhhh\n");
                                 this.nowIRName="%x"+index;
                                 index++;
                             }else {
@@ -1429,24 +1487,39 @@ public class Visitor extends lab8BaseVisitor<Void> {
                             visit(ctx.funcRParams());
                             String ret_var="";
                             if (symbol.is_connect){
+
+                                //替換變量，保證不出現重複定義
+                                int flag=0;
+                                for (int i = 0; i < tmpforinline.size(); i++) {
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("%(a\\d+)?x","%a"+diaoyongnum+"x"));
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("label %b","label %a"+diaoyongnum+"b"));
+                                    Pattern pattern =Pattern.compile("(b\\d+):");
+                                    Matcher matcher = pattern.matcher(tmpforinline.get(i));
+                                    if (matcher.find()){
+                                        tmpforinline.set(i,tmpforinline.get(i).replaceAll("(b\\d+):","a"+diaoyongnum+matcher.group(1)+":"));
+                                    }
+                                    if (tmpforinline.get(i).contains("ret")){
+                                        ret_var=tmpforinline.get(i).substring(11);
+                                        tmpforinline.set(i,"    br label %b"+index+"\n");
+                                        flag=1;
+                                    }
+
+                                }
+                                if (flag==0){
+                                    tmpforinline.add("    br label %b"+index+"\n");ret_var="0\n";
+                                }
                                 //替换函数参数
                                 for (int i = 0; i < symbol.params.size(); i++) {
-                                    for (int j = 0; j < inline1.context.size(); j++) {
-                                        System.out.println(inline1.context.size() + "  " + symbol.params.size());
-                                        if (inline1.context.get(j).contains(symbol.params.get(i).new_name+",")) {
-                                            inline1.context.set(j, inline1.context.get(j).replaceAll(symbol.params.get(i).new_name, func_param.get(pos_param + i)));
+                                    for (int j = 0; j < tmpforinline.size(); j++) {
+                                        if (tmpforinline.get(j).contains("%a"+diaoyongnum+symbol.params.get(i).new_name.substring(1)+",")){
+                                            tmpforinline.set(j,tmpforinline.get(j).replaceAll("%a"+diaoyongnum+symbol.params.get(i).new_name.substring(1),func_param.get(pos_param+i)));
                                         }
                                     }
                                 }
-                                for (int i = 0; i < inline1.context.size(); i++) {
-                                    if (inline1.context.get(i).contains("ret")) {
-                                        ret_var = inline1.context.get(i).substring(8);
-                                        inline1.context.set(i, "    br label %x" + index + "\n");
-                                    }
-                                }
-                                ir_code.addAll(inline1.context);
 
-                                ir_code.add("\nx" + index + ":\n");
+                                ir_code.addAll(tmpforinline);
+
+                                ir_code.add("\nb" + index + ":\n");
                                 index++;
                             }else {
                                 ir_code.add("    call void "+symbol.new_name+"(");
@@ -1463,22 +1536,32 @@ public class Visitor extends lab8BaseVisitor<Void> {
                             //无返回值无参数
                             String ret_var="";
                             if (symbol.is_connect){
-                                for (int i = 0; i < inline1.context.size(); i++) {
-                                    if (inline1.context.get(i).contains("ret")){
-                                        ret_var=inline1.context.get(i).substring(8);
-                                        inline1.context.set(i,"    br label %x"+index+"\n");
+                                int flag=0;
+                                for (int i = 0; i < tmpforinline.size(); i++) {
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("%(a\\d+)?x","%a"+diaoyongnum+"x"));
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("label %b","label %a"+diaoyongnum+"b"));
+                                    Pattern pattern =Pattern.compile("(b\\d+):");
+                                    Matcher matcher = pattern.matcher(tmpforinline.get(i));
+                                    if (matcher.find()){
+                                        tmpforinline.set(i,tmpforinline.get(i).replaceAll("(b\\d+):","a"+diaoyongnum+matcher.group(1)+":"));
                                     }
-
+                                    if (tmpforinline.get(i).contains("ret")){
+                                        ret_var=tmpforinline.get(i).substring(11);
+                                        tmpforinline.set(i,"    br label %b"+index+"\n");
+                                        flag=1;
+                                    }
                                 }
-                                ir_code.addAll(inline1.context);
+                                if (flag==0){
+                                    tmpforinline.add("    br label %b"+index+"\n");ret_var="0\n";
+                                }
+                                ir_code.addAll(tmpforinline);
 
-                                ir_code.add("\nx"+index+":\n");index++;
+                                ir_code.add("\nb"+index+":\n");index++;
                             }else {
                                 ir_code.add("    call void "+symbol.new_name+"()\n");
                                 this.nowIRName="%x"+index;
                                 index++;
                             }
-
                         }
                         pos_param=tmp;
                         for (int i = 0; i < symbol.params.size(); i++) {
