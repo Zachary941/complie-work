@@ -1,4 +1,4 @@
-[jobs.short_circuit]
+[jobs.inline]
 image = { source = "dockerfile", path = "."}
 
 run = [

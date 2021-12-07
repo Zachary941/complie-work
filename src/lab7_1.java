@@ -14,9 +14,9 @@ import java.util.Scanner;
 */
 public class lab7_1 {
     public static void main(String[] args) throws FileNotFoundException {
-//        String inputName = "D:\\学习\\2021大三上学期\\编译原理\\编译原理实验\\lab8\\src\\input.txt";
-//        String outputName = "./output.txt";
-        String inputName=args[0];
+        // String inputName = "D:\\学习\\2021大三上学期\\编译原理\\编译原理实验\\lab8\\src\\input.txt";
+        // String outputName = "./output.txt";
+       String inputName=args[0];
 
         String input1 = "";
         StringBuilder input2 = new StringBuilder();
@@ -55,11 +55,11 @@ public class lab7_1 {
         ParseTree tree = parser.compUnit();
         Visitor visitor = new Visitor();
         visitor.visit(tree);
-        String outputName = args[1];
-        PrintStream ps = new PrintStream(outputName);
-        System.setOut(ps);
-        for (int i = 0; i < Visitor.ir_code.size(); i++) {
-            System.out.print(Visitor.ir_code.get(i));
+       String outputName = args[1];
+       PrintStream ps = new PrintStream(outputName);
+       System.setOut(ps);
+        for (int i = 0; i < Visitor.out_code.size(); i++) {
+            System.out.print(Visitor.out_code.get(i));
         }
 //        System.out.println(tree.toStringTree(parser));
 

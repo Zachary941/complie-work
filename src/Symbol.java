@@ -12,6 +12,7 @@ public class Symbol {
     int array2=0;
     int array_long_for_two;
     ArrayList<Funcfparam> params=new ArrayList<>();
+    Boolean is_connect=true;
     Symbol(String old_name, String new_name, int layer) {
         this.old_name = old_name;
         this.new_name = new_name;

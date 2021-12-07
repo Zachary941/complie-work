@@ -10,6 +10,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
     int layer = 0;
     int if_alone = 0;
     public static ArrayList<String> ir_code = new ArrayList<>();
+    public static ArrayList<String> out_code = new ArrayList<>();
     int[] fun_decl = {0, 0, 0, 0, 0, 0, 0, 0};
     int num_of_initval = 0;
     int array1 = 0;
@@ -25,7 +26,9 @@ public class Visitor extends lab8BaseVisitor<Void> {
     int no_load;
     int no_add;
     int pos_param;
+    String now_in_func="";
     //宏观定义和当前变量定义
+    ArrayList<Inline> neilian_stack=new ArrayList<>();
     public void is_def_in_symbolsstack() {
         for (Symbol symbol : symbolsstack) {
             if (this.nowidentName.equals(symbol.old_name) && (symbol.layer == this.layer)) {
@@ -34,6 +37,17 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 System.exit(1);
             }
         }
+    }
+
+    @Override
+    public Void visitCompUnit(lab8Parser.CompUnitContext ctx) {
+        ir_code.add(0, "declare i32 @getint()\n");
+        ir_code.add(0, "declare void @putint(i32)\n");
+        ir_code.add(0, "declare i32 @getch()\n");
+        ir_code.add(0, "declare void @putch(i32)\n");
+        ir_code.add(0, "declare i32 @getarray(i32*)\n");
+        ir_code.add(0,"declare void @putarray(i32,i32*)\n");
+        return super.visitCompUnit(ctx);
     }
 
     @Override
@@ -607,6 +621,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
     @Override
     public Void visitFuncDef(lab8Parser.FuncDefContext ctx) {
         layer=0;
+        int func_start=ir_code.size();
         if (ctx.children.size() == 5) {
             String functype="";
             if (ctx.funcType().getText().equals("void")){
@@ -615,21 +630,36 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 functype="i32";
             }
             this.nowidentName=ctx.Ident().getText();
+            now_in_func=ctx.Ident().getText();
+            int d_star=ir_code.size(),d_end=0;
             ir_code.add("define dso_local "+functype+" @"+this.nowidentName+"()\n");
+            String func_name=this.nowidentName;
             Symbol symbol=new Symbol(this.nowidentName,"@"+this.nowidentName,layer);
             symbol.type=functype+"_func";
             symbolsstack.add(symbol);
 //            System.out.println("define dso_local i32 @main()");
             ir_code.add("{\n");
             layer++;
+            int start=ir_code.size(),end=0;
             visit(ctx.block());
-            if (functype.equals("void")){
-                ir_code.add("    ret void\n");
-            }else {
-                ir_code.add("    ret i32 0\n");
+            end=ir_code.size();
+            if (!ir_code.get(ir_code.size()-1).contains("ret")){
+                if (functype.equals("void")){
+                    ir_code.add("    ret void\n");
+                }else {
+                    ir_code.add("    ret i32 0\n");
+                }
             }
+            ArrayList<String> tmp=new ArrayList<>();
+            for (int i = start; i < end; i++) {
+                tmp.add(ir_code.get(i));
+            }
+            Inline inline=new Inline(func_name, tmp,start,end);
             ir_code.add("}\n");
-            return null;
+            d_end=ir_code.size()-1;
+            inline.del_end=d_end;
+            inline.del_start=d_star;
+            neilian_stack.add(inline);
         }else if (ctx.children.size()==6){
             String functype="";
             if (ctx.funcType().getText().equals("void")){
@@ -638,16 +668,20 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 functype="i32";
             }
             this.nowidentName=ctx.Ident().getText();
+            now_in_func=ctx.Ident().getText();
+            int d_start=ir_code.size();
             ir_code.add("define dso_local "+functype+" @"+this.nowidentName+"(");
 
             Symbol symbol=new Symbol(this.nowidentName,"@"+this.nowidentName,layer);
             symbol.type=functype+"_func";
+            String func_name=this.nowidentName;
             symbolsstack.add(symbol);
             func_symbol=symbolsstack.get(symbolsstack.size()-1);
             layer=1;
             visit(ctx.funcFParams());
             ir_code.add(")\n");
             ir_code.add("{\n");
+            int start=ir_code.size(),end=0;
             for (int i = 0; i < symbol.params.size(); i++) {
                 if (symbol.params.get(i).type==0)
                 {
@@ -677,16 +711,35 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 }
             }
             visit(ctx.block());
+            end=ir_code.size()-1;
+            ArrayList<String> tmp=new ArrayList<>();
+            for (int i = start; i <= end; i++) {
+                tmp.add(ir_code.get(i));
+            }
+            Inline inline=new Inline(func_name, tmp,start,end);
             if (functype.equals("void")){
                 ir_code.add("    ret void\n");
             }else {
                 ir_code.add("    ret i32 0\n");
             }
             ir_code.add("}\n");
+            inline.del_end=ir_code.size()-1;
+            inline.del_start=d_start;
+            neilian_stack.add(inline);
         }else {
             ir_code.add("funcdef error\n");
             System.out.println("funcdef error");
             System.exit(1);
+        }
+
+        for (Symbol symbol : symbolsstack) {
+            if (now_in_func.equals(symbol.old_name)) {
+                if (!symbol.is_connect||symbol.old_name.equals("main")){
+                    for (int i = func_start; i < ir_code.size(); i++) {
+                        out_code.add(ir_code.get(i));
+                    }
+                }
+            }
         }
 
         return null;
@@ -707,7 +760,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
     public Void visitFuncFParam(lab8Parser.FuncFParamContext ctx) {
         if (ctx.children.size()==2){
             this.nowidentName=ctx.Ident().getText();
-            
+
             ir_code.add("i32 %x"+index);
             //将参数放入函数的symbol里去
             Funcfparam funcfparam=new Funcfparam(this.nowidentName,"%x"+index,"i32",0);
@@ -953,7 +1006,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
             String left = "", right = "";
             visit(ctx.lAndExp());
             left = this.nowIRName;
-            ir_code.add("    br i1 "+left+" label %x");
+            ir_code.add("    br i1 "+left+",label %x");
             ir_code.add((index+1)+",label %x");
             ir_code.add("end");index++;
             ir_code.add("\nx"+index+":\n");index++;
@@ -978,16 +1031,23 @@ public class Visitor extends lab8BaseVisitor<Void> {
             if_alone = 0;
             visit(ctx.lAndExp());
         } else if (ctx.children.size() == 3) {
+            int orstart=0,orend=0;
+            orstart=ir_code.size()-1;
             if_alone = 1;
             String left = "", right = "";
             visit(ctx.lOrExp());
             left = this.nowIRName;
             // br i1 %res_a label block_b, label %block_out
-            ir_code.add("    br i1 "+left+" label %x");
+            ir_code.add("    br i1 "+left+",label %x");
             ir_code.add("start");
             ir_code.add(", label %x"+(index+1)+"\n");index++;
             ir_code.add("x"+index+":\n");index++;
-
+            orend=ir_code.size()-1;
+            for (int i = orstart; i <=orend ; i++) {
+                if (ir_code.get(i).equals("end")) {
+                    ir_code.set(i, "" + (index-1));
+                }
+            }
             if_alone = 0;
             visit(ctx.lAndExp());
             right = this.nowIRName;
@@ -1202,15 +1262,22 @@ public class Visitor extends lab8BaseVisitor<Void> {
         } else if (ctx.children.size() >= 3) {
             ku=0;
             this.nowidentName=ctx.Ident().getText();
+            Symbol now_symbol_connect=new Symbol();
+            //判断是否能进行内联
+            if (this.nowidentName.equals(now_in_func)){
+                System.out.println("该函数不能进行内联,函数名为"+now_in_func);
+                for (Symbol symbol : symbolsstack) {
+                    if (symbol.old_name.equals(now_in_func)) {
+                        symbol.is_connect=false;
+                        now_symbol_connect=symbol;
+                    }
+                }
+            }
             //返回函数名
             String fun_name = this.nowidentName;
 //            func_param_add.clear();
             if (fun_name.equals("getint")) {
                 ku=1;
-                if (fun_decl[0] == 0) {
-                    ir_code.add(0, "declare i32 @getint()\n");
-                    fun_decl[0] = 1;
-                }
                 ir_code.add("    %x" + index + " = call i32 @getint()\n");
                 index++;
                 this.nowIRName = "%x" + (index - 1);
@@ -1218,10 +1285,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 ku=1;
                 func_param_add.add(1);
                 visit(ctx.funcRParams());
-                if (fun_decl[1] == 0) {
-                    ir_code.add(0, "declare void @putint(i32)\n");
-                    fun_decl[1] = 1;
-                }
+
                 ir_code.add("    call void @putint(i32 " + this.nowIRName + ")\n");
                 for (int i = 0; i < 1; i++) {
                     func_param_add.remove(func_param_add.size()-1);
@@ -1231,10 +1295,6 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 }
             } else if (fun_name.equals("getch")) {
                 ku=1;
-                if (fun_decl[2] == 0) {
-                    ir_code.add(0, "declare i32 @getch()\n");
-                    fun_decl[2] = 1;
-                }
                 ir_code.add("    %x" + index + " = call i32 @getch()\n");
                 index++;
                 this.nowIRName = "%x" + (index - 1);
@@ -1242,10 +1302,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 ku=1;
                 func_param_add.add(1);
                 visit(ctx.funcRParams());
-                if (fun_decl[3] == 0) {
-                    ir_code.add(0, "declare void @putch(i32)\n");
-                    fun_decl[3] = 1;
-                }
+
                 ir_code.add("    call void @putch(i32 " + this.nowIRName + ")\n");
                 for (int i = 0; i < 1; i++) {
                     func_param_add.remove(func_param_add.size()-1);
@@ -1257,10 +1314,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 ku=1;
                 func_param_add.add(2);
                 visit(ctx.funcRParams());
-                if (fun_decl[4] == 0) {
-                    ir_code.add(0, "declare i32 @getarray(i32*)\n");
-                    fun_decl[4] = 1;
-                }
+
                 //%13 = call i32 @getarray(i32* %12)
                 ir_code.add("    %x" + index + " = call i32 @getarray(i32* "+this.nowIRName+")\n");
                 index++;
@@ -1276,10 +1330,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                 func_param_add.add(1);
                 func_param_add.add(2);
                 visit(ctx.funcRParams());
-                if (fun_decl[5] == 0) {
-                    ir_code.add(0,"declare void @putarray(i32,i32*)\n");
-                    fun_decl[5] = 1;
-                }
+
                 //putarr函数尚未完成
                 ir_code.add("    call void @putarray(i32 "+func_param.get(func_param.size()-2)+", i32* "+func_param.get(func_param.size()-1)+")\n");
                 for (int i = 0; i < 2; i++) {
@@ -1289,6 +1340,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
                     func_param.remove(func_param.size()-1);
                 }
             }else {
+                //函数内敛
                 int flag2=0;
                 for (Symbol symbol : symbolsstack) {
                     if (fun_name.equals(symbol.old_name)) {
@@ -1300,43 +1352,133 @@ public class Visitor extends lab8BaseVisitor<Void> {
                             func_param_add.add(symbol.params.get(i).type+1);
                             System.out.println(symbol.params.get(i).type);
                         }
-                        System.out.println(symbol.old_name+"  "+symbol.type);
                         flag2=1;
+                        Inline inline1=new Inline();
+                        for (Inline inline : neilian_stack) {
+                            if (symbol.old_name.equals(inline.func_name)) {
+                                inline1=inline;
+                            }
+                        }
+
                         if (symbol.type.equals("i32_func")&&symbol.params.size()==0){
                             //有返回值但无参数
                             //    %2 = call i32 @func1()
-                            ir_code.add("    %x"+index+" = call i32 "+symbol.new_name+"()\n");
-                            this.nowIRName="%x"+index;
-                            index++;
+                            String ret_var="";
+                            if (symbol.is_connect){
+                                //内联
+                                for (int i = 0; i < inline1.context.size(); i++) {
+                                    if (inline1.context.get(i).contains("ret")){
+                                        ret_var=inline1.context.get(i).substring(8);
+                                        inline1.context.set(i,"    br label %x"+index+"\n");
+                                    }
+                                }
+                                ir_code.addAll(inline1.context);
+//                                System.out.println(inline1.context+"md");
+
+                                ir_code.add("\nx"+index+":\n");index++;
+                                ir_code.add("    %x"+index+"= add i32 0,"+ret_var);
+                                this.nowIRName="%x"+index;
+                                index++;
+                            }else {
+                                ir_code.add("    %x"+index+" = call i32 "+symbol.new_name+"()\n");
+                                this.nowIRName="%x"+index;
+                                index++;
+                            }
+
                         }else if (symbol.type.equals("i32_func")){
                             //有返回值有参数
                             visit(ctx.funcRParams());
-                            ir_code.add("    %x"+index+" = call i32 "+symbol.new_name+"(");
-                            this.nowIRName="%x"+index;
-                            index++;
-                            for (int i = 0; i < symbol.params.size(); i++) {
-                                ir_code.add(symbol.params.get(i).paramtype+" "+func_param.get(pos_param+i));
-                                if (i!=symbol.params.size()-1){
-                                    ir_code.add(",");
+                            String ret_var="";
+                            if (symbol.is_connect){
+                                for (int i = 0; i < symbol.params.size(); i++) {
+                                    for (int j = 0; j < inline1.context.size(); j++) {
+                                        System.out.println(inline1.context.size()+"  "+symbol.params.size());
+                                        if (inline1.context.get(j).contains(symbol.params.get(i).new_name+",")){
+                                            inline1.context.set(j,inline1.context.get(j).replaceAll(symbol.params.get(i).new_name,func_param.get(pos_param+i)));
+                                        }
+                                    }
                                 }
+                                for (int i = 0; i < inline1.context.size(); i++) {
+                                    if (inline1.context.get(i).contains("ret")){
+                                        ret_var=inline1.context.get(i).substring(8);
+                                        inline1.context.set(i,"    br label %x"+index+"\n");
+                                    }
+                                }
+                                ir_code.addAll(inline1.context);
+//                                System.out.println(inline1.context+"md");
+
+                                ir_code.add("\nx"+index+":\n");index++;
+                                ir_code.add("    %x"+index+"= add i32 0,"+ret_var);
+                                this.nowIRName="%x"+index;
+                                index++;
+                            }else {
+                                ir_code.add("    %x"+index+" = call i32 "+symbol.new_name+"(");
+                                this.nowIRName="%x"+index;
+                                index++;
+                                for (int i = 0; i < symbol.params.size(); i++) {
+                                    ir_code.add(symbol.params.get(i).paramtype+" "+func_param.get(pos_param+i));
+                                    if (i!=symbol.params.size()-1){
+                                        ir_code.add(",");
+                                    }
+                                }
+                                ir_code.add(")\n");
                             }
-                            ir_code.add(")\n");
+
                         }else if (symbol.type.equals("void_func")&&symbol.params.size()!=0){
                             //无返回值但有参数
                             visit(ctx.funcRParams());
-                            ir_code.add("    call void "+symbol.new_name+"(");
-                            for (int i = 0; i < symbol.params.size(); i++) {
-                                ir_code.add(symbol.params.get(i).paramtype+" "+func_param.get(i));
-                                if (i!=func_param.size()-1){
-                                    ir_code.add(",");
+                            String ret_var="";
+                            if (symbol.is_connect){
+                                //替换函数参数
+                                for (int i = 0; i < symbol.params.size(); i++) {
+                                    for (int j = 0; j < inline1.context.size(); j++) {
+                                        System.out.println(inline1.context.size() + "  " + symbol.params.size());
+                                        if (inline1.context.get(j).contains(symbol.params.get(i).new_name+",")) {
+                                            inline1.context.set(j, inline1.context.get(j).replaceAll(symbol.params.get(i).new_name, func_param.get(pos_param + i)));
+                                        }
+                                    }
                                 }
+                                for (int i = 0; i < inline1.context.size(); i++) {
+                                    if (inline1.context.get(i).contains("ret")) {
+                                        ret_var = inline1.context.get(i).substring(8);
+                                        inline1.context.set(i, "    br label %x" + index + "\n");
+                                    }
+                                }
+                                ir_code.addAll(inline1.context);
+
+                                ir_code.add("\nx" + index + ":\n");
+                                index++;
+                            }else {
+                                ir_code.add("    call void "+symbol.new_name+"(");
+                                for (int i = 0; i < symbol.params.size(); i++) {
+                                    ir_code.add(symbol.params.get(i).paramtype+" "+func_param.get(i));
+                                    if (i!=func_param.size()-1){
+                                        ir_code.add(",");
+                                    }
+                                }
+                                ir_code.add(")\n");
                             }
-                            ir_code.add(")\n");
+
                         }else{
                             //无返回值无参数
-                            ir_code.add("    call void "+symbol.new_name+"()\n");
-                            this.nowIRName="%x"+index;
-                            index++;
+                            String ret_var="";
+                            if (symbol.is_connect){
+                                for (int i = 0; i < inline1.context.size(); i++) {
+                                    if (inline1.context.get(i).contains("ret")){
+                                        ret_var=inline1.context.get(i).substring(8);
+                                        inline1.context.set(i,"    br label %x"+index+"\n");
+                                    }
+
+                                }
+                                ir_code.addAll(inline1.context);
+
+                                ir_code.add("\nx"+index+":\n");index++;
+                            }else {
+                                ir_code.add("    call void "+symbol.new_name+"()\n");
+                                this.nowIRName="%x"+index;
+                                index++;
+                            }
+
                         }
                         pos_param=tmp;
                         for (int i = 0; i < symbol.params.size(); i++) {
