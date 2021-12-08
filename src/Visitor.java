@@ -57,6 +57,7 @@ public class Visitor extends lab8BaseVisitor<Void> {
         out_code.add(0, "declare void @putch(i32)\n");
         out_code.add(0, "declare i32 @getarray(i32*)\n");
         out_code.add(0,"declare void @putarray(i32,i32*)\n");
+        out_code.add(0,"declare void @memset(i32*, i32, i32)\n");
 
         return super.visitCompUnit(ctx);
     }
@@ -1398,11 +1399,11 @@ public class Visitor extends lab8BaseVisitor<Void> {
                                 int flag=0;
                                 for (int i = 0; i < tmpforinline.size(); i++) {
                                     tmpforinline.set(i,tmpforinline.get(i).replaceAll("%(a\\d+)?x","%a"+diaoyongnum+"x"));
-                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("label %b","label %a"+diaoyongnum+"b"));
+                                    tmpforinline.set(i,tmpforinline.get(i).replaceAll("label %(a\\d+)?b","label %a"+diaoyongnum+"b"));
                                     Pattern pattern =Pattern.compile("(b\\d+):");
                                     Matcher matcher = pattern.matcher(tmpforinline.get(i));
                                     if (matcher.find()){
-                                        tmpforinline.set(i,tmpforinline.get(i).replaceAll("(b\\d+):","a"+diaoyongnum+matcher.group(1)+":"));
+                                        tmpforinline.set(i,tmpforinline.get(i).replaceAll(".*(b\\d+):","a"+diaoyongnum+matcher.group(1)+":"));
                                     }
 
                                     if (tmpforinline.get(i).contains("    ret ")){
